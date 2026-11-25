@@ -1,6 +1,7 @@
 import "./kids-world.css";
 
-const THREE_URL = "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";\nlet THREE;
+const THREE_URL = "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
+let THREE;
 
 export function mountKidsWorld() {
   const topbar = document.querySelector(".topbar");
