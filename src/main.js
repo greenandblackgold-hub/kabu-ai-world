@@ -146,11 +146,22 @@ async function sendVoice(blob) {
 
 async function loadGreeting() {
   try {
-    const response = await fetch("/api/greeting");
-    if (!response.ok) return;
-    const data = await response.json();
-    if (data.audio) { greetingAudio = new Audio(data.audio); greetingAudio.preload = "auto"; playGreetingIfReady(); }
-  } catch { /* Greeting animation remains available if audio is not configured. */ }
+    const health = await fetch("/api/health", { cache: "no-store" });
+    const healthData = await health.json().catch(() => ({}));
+    if (!health.ok || !healthData.configured) {
+      setStatus("ካቡ ይንቀሳቐስ ኣሎ፤ ግን የድምጺ AI ቁልፊ ገና ኣይተዳለወን።");
+      return;
+    }
+    const response = await fetch("/api/greeting", { cache: "no-store" });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.audio) throw new Error(data.error || "Greeting audio unavailable");
+    greetingAudio = new Audio(data.audio);
+    greetingAudio.preload = "auto";
+    setStatus("ካቡ ሰላምታ ንምሃብ ተዳልዩ ኣሎ። ድምጺ ንምስማዕ ካቡ ጠውቕ።");
+    playGreetingIfReady();
+  } catch {
+    setStatus("ካቡ ኣሎ፤ ግን የድምጺ ሰላምታ ኣብዚ ግዜ ኣይተሳኸዐን።");
+  }
 }
 function playGreetingIfReady() {
   if (!greetingAudio) return;
