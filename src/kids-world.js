@@ -36,11 +36,11 @@ export function mountKidsWorld() {
       <div class="kw-stage-label">✨ KABU LIVING 3D WORLD</div><div class="kw-animal-talk" aria-live="polite"><b id="kw-speaker">ቦቢ 🐶</b><span id="kw-dialogue">ሰላም ኣዕሩኽ! ከመይ ኣለኹም?</span></div>
       <div class="kw-stage-error" hidden>3D ዓለም ክኸፍት ኣይከኣለን። ኢንተርነትካ ኣረጋግጽ እሞ ደጊምካ ፈትን።</div>
     </div>
-    <div class="kw-story-caption" aria-live="polite"><span>✨</span><span id="kw-message">ቦቢ ውሻን ሮሚ ፈረስን ኣብ 3D ዓለም ክትራኸቦም ድሉው ዲኻ?</span></div>
+    <div class="kw-story-caption" aria-live="polite"><span>✨</span><span id="kw-message">ሸሞንተ ዓይነት እንስሳት ክራኸቡ፣ ክዛረቡን ብሓባር ክጉዓዙን እዮም!</span></div>
     <div class="kw-controls">
       <button type="button" data-action="play">⏸️ ዕረፍቲ</button>
       <button type="button" data-action="story">📖 ታሪኽ ጀምር</button>
-      <button type="button" data-action="dance">💃 ሳዕስዕ</button>
+      <button type="button" data-action="dance">🐾 ምንቅስቓስ ስብስብ</button>
       <button type="button" data-action="camera">🎥 ካሜራ ኣንቀሳቕስ</button>
       <button type="button" data-action="sound">🔊 ድምጺ</button>
     </div>
@@ -208,9 +208,9 @@ export function mountKidsWorld() {
       sphere(.13,.1,.16,light,leg,0,-length+.03,.04); legs.push(leg);
     }
     const tail=sphere(type==="lion"?.09:.07,type==="lion"?.5:.34,.08,type==="lion"?dark:coat,root,0,1.2,-.95);
-    if(type==="lion") sphere(.55,.52,.46,dark,root,0,1.95,.62);
+    if(type==="lion"){sphere(.55,.52,.46,dark,root,0,1.95,.62);for(const s of [-1,1])sphere(.13,.14,.1,coat,head,s*.3,.29,-.02);}
     if(type==="elephant"){const trunk=cylinder(.12,.17,.78,coat,head,0,-.4,.43,18);trunk.rotation.x=-.55;for(const s of [-1,1])sphere(.3,.38,.12,light,head,s*.42,0,-.02);}
-    if(type==="giraffe"){for(let i=0;i<9;i++)sphere(.11,.13,.1,dark,root,Math.sin(i*7)*.43,.8+(i%4)*.25,Math.cos(i*7)*.66);for(const s of [-1,1])cylinder(.045,.05,.38,dark,head,s*.17,.47,0,10);}
+    if(type==="giraffe"){cylinder(.22,.3,1.2,coat,root,0,1.55,.56);for(let i=0;i<9;i++)sphere(.11,.13,.1,dark,root,Math.sin(i*7)*.43,.8+(i%4)*.25,Math.cos(i*7)*.66);for(const s of [-1,1])cylinder(.045,.05,.38,dark,head,s*.17,.47,0,10);}
     if(type==="zebra"){for(let i=0;i<7;i++){const stripe=box(.055,.62,.035,dark,root,-.48+i*.16,1.08,.78);stripe.rotation.z=(i-3)*-.12;}for(const s of [-1,1])sphere(.09,.22,.07,coat,head,s*.24,.35,0);}
     if(type==="rabbit")for(const s of [-1,1]){const ear=sphere(.12,.48,.09,coat,head,s*.19,.53,-.02);ear.rotation.z=s*-.18;sphere(.065,.34,.025,light,head,s*.19,.54,.065);}
     if(type==="deer")for(const s of [-1,1]){const antler=cylinder(.035,.055,.55,light,head,s*.24,.52,-.02,8);antler.rotation.z=s*.25;}
