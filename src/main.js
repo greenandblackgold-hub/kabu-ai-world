@@ -14,13 +14,17 @@ app.innerHTML = `
     </section>
     <section class="play-area" aria-label="Kabu character">
       <div class="sparkle sparkle-one">✦</div><div class="sparkle sparkle-two">✧</div>
-      <div class="balloon" id="kabu" role="img" aria-label="ካቡ ቀይሕ ባሎን">
-        <div class="shine"></div><div class="face"><span class="eye"></span><span class="eye"></span><span class="cheek cheek-left"></span><span class="cheek cheek-right"></span><span class="smile"></span></div>
-      </div>
-      <div class="string"></div><div class="floor-shadow"></div>
+      <button class="kabu-character" id="kabu" type="button" aria-label="ካቡ ሰላምታ ይህብ">
+        <span class="kabu-arm arm-left"><span class="kabu-hand"></span></span>
+        <span class="kabu-arm arm-right"><span class="kabu-hand"></span></span>
+        <span class="kabu-body"><span class="fur-shine"></span>
+          <span class="kabu-face"><i class="eye"></i><i class="eye"></i><i class="cheek cheek-left"></i><i class="cheek cheek-right"></i><i class="smile"></i></span>
+        </span>
+        <span class="kabu-leg leg-left"><i class="kabu-foot"></i></span><span class="kabu-leg leg-right"><i class="kabu-foot"></i></span>
+      </button><div class="floor-shadow"></div>
     </section>
     <section class="interaction">
-      <p id="kabu-message" class="message" aria-live="polite">ካቡ ክሰምዓካ ድሉው እዩ!</p>
+      <p id="kabu-message" class="message" aria-live="polite">ሰላም ካቡየ፣ ደሓን ዲኻ?</p>
       <div id="transcript" class="transcript" aria-live="polite"></div>
       <button id="listen" class="listen-button" type="button"><span class="mic">🎤</span><span id="button-label">ካቡ፡ ስምዓኒ!</span></button>
       <p id="status" class="status">ንምጅማር ኣብቲ ማይክሮፎን ጠውቕ።</p>
@@ -36,6 +40,7 @@ const message = document.querySelector("#kabu-message");
 const transcript = document.querySelector("#transcript");
 const balloon = document.querySelector("#kabu");
 const resetButton = document.querySelector("#reset");
+let greetingAudio = null;
 let recorder = null;
 let stream = null;
 let chunks = [];
@@ -62,6 +67,7 @@ const stopRecording = () => {
 
 listenButton.addEventListener("click", async () => {
   if (busy) return;
+  playGreetingIfReady();
   if (recorder?.state === "recording") {
     stopRecording();
     return;
@@ -137,6 +143,26 @@ async function sendVoice(blob) {
     setBusy(false);
   }
 }
+
+async function loadGreeting() {
+  try {
+    const response = await fetch("/api/greeting");
+    if (!response.ok) return;
+    const data = await response.json();
+    if (data.audio) { greetingAudio = new Audio(data.audio); greetingAudio.preload = "auto"; playGreetingIfReady(); }
+  } catch { /* Greeting animation remains available if audio is not configured. */ }
+}
+function playGreetingIfReady() {
+  if (!greetingAudio) return;
+  greetingAudio.currentTime = 0;
+  greetingAudio.play().then(() => {
+    balloon.classList.add("talking", "waving");
+    greetingAudio.onended = () => balloon.classList.remove("talking", "waving");
+  }).catch(() => { /* Chrome may require a click before playing sound. */ });
+}
+balloon.addEventListener("click", () => { balloon.classList.add("waving"); playGreetingIfReady(); });
+window.addEventListener("DOMContentLoaded", () => { balloon.classList.add("waving"); setTimeout(() => balloon.classList.remove("waving"), 2400); });
+loadGreeting();
 
 resetButton.addEventListener("click", () => {
   if (busy || recorder?.state === "recording") return;
