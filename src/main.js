@@ -104,35 +104,45 @@ function speak(text) {
   utterance.onerror = () => { setTalking(false); setStatus("እቲ ብራውዘር ዘሎ ድምጺ ቋንቋ ትግርኛ ክዛረብ ኣይከኣለን። ጽሑፍ ግን ክትጥቀም ትኽእል።"); };
   speechSynthesis.speak(utterance);
 }
-function answerFor(raw) {
-  const q = raw.toLowerCase().replace(/[።፣!?.,]/g, " ").trim();
-  const has = (...words) => words.some(w => q.includes(w));
-  if (has("ሰላም", "hello", "hi")) return "ሰላም ዓርከይ! ሎሚ እንታይ ንጻወት?";
-  if (has("ከመይ", "ደሓን", "ኣለኻ")) return "ጽቡቕ ኣለኹ! ንስኻኸ ደሓን ዲኻ?";
-  if (has("ስም", "መን ኢኻ")) return "ኣነ ካቡ እየ! ቀይሕ ጸጉራም ዓርክኻ።";
-  if (has("ቀይሕ", "ሕብሪ", "ሕብርታት")) return "ቀይሕ ሕብሪ እዩ! ካቡ እውን ቀይሕ እዩ።";
-  if (has("ቁጽሪ", "ቁጸር", "ሓደ", "ክልተ", "ሰለስተ")) return "ሓደ፣ ክልተ፣ ሰለስተ! ብሓባር ንቁጸር።";
-  if (has("ድሙ", "ድሙ", "ውሻ", "ከልቢ", "እንስሳ")) return "ድሙ ሚያው ይብል! እቲ እትፈትዎ እንስሳ እንታይ እዩ?";
-  if (has("ጸወታ", "ንጻወት", "ጸወት")) return "እሺ! ንሕብርታት ወይ ንቁጽሪ ንጻወት። ኣየናይ ትመርጽ?";
-  if (has("ፍቕሪ", "ፈትወካ")) return "ኣነ እውን ምሳኻ ምጽዋት እፈቱ!";
-  if (has("ደኺመ", "ሓዚነ", "ፈሪሐ", "ጎዲኡኒ", "ሕማም")) return "የቐንየለይ ዓርከይ። በጃኻ ሕጂ ንኣዴኻ ወይ ንኣቦኻ ንገሮም።";
-  if (has("ኣዴ", "ኣቦ", "ወለዲ")) return "ወለድኻ ኣዝዮም ይፈትዉኻ። ምሳታቶም ተጻወት!";
-  return "ዝበልካዮ ክርዳእ እየ ዝፍትን ዘለኹ። ብቐስታ እንደገና ትብሎ ዶ?";
-}
-function respond(raw) {
+async function respond(raw) {
   const text = String(raw || "").trim();
   if (!text || busy) return;
   busy = true;
   balloon.classList.add("thinking");
   transcript.textContent = "ንስኻ፡ " + text;
-  const reply = answerFor(text);
-  message.textContent = reply;
-  history.push({ role: "user", content: text }, { role: "assistant", content: reply });
-  history = history.slice(-12);
-  setStatus("ካቡ መልሲ ሂቡካ ኣሎ። ደጊምካ ክትዛረብ ወይ ክትጽሕፍ ትኽእል።");
-  balloon.classList.remove("thinking");
-  busy = false;
-  speak(reply);
+  message.textContent = "ካቡ ይሓስብ ኣሎ…";
+  setStatus("ካቡ መልሲ የዳሉ ኣሎ።");
+  try {
+    const response = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: text, history: history.slice(-10) })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const errorText = response.status === 503
+        ? "ካቡ ናይ AI መፍትሕ ክሳብ ዝተቐናበረ ኣይተኣሳሰረን። በጃኻ ንወላዲ ንገር።"
+        : response.status === 429
+          ? "ካቡ ብዙሕ ሕቶታት ተቐቢሉ ኣሎ። ቁሩብ ጽናሕ እሞ ደጊምካ ፈትን።"
+          : "ካቡ ሕጂ መልሲ ክህብ ኣይከኣለን። ቁሩብ ጸኒሕካ ደጊምካ ፈትን።";
+      message.textContent = errorText;
+      setStatus("AI ኣገልግሎት ንግዚኡ ኣይሰርሕን ኣሎ።");
+      return;
+    }
+    const reply = String(data.reply || "").trim();
+    if (!reply) throw new Error("Empty AI response");
+    history.push({ role: "user", content: text }, { role: "assistant", content: reply });
+    history = history.slice(-12);
+    message.textContent = reply;
+    setStatus("ካቡ ብAI መልሲ ሂቡካ ኣሎ።");
+    speak(reply);
+  } catch {
+    message.textContent = "ካቡ ሕጂ ክሰርሕ ኣይከኣለን። እንደገና ፈትን።";
+    setStatus("ናይ ኢንተርነት ወይ AI ጸገም ኣሎ።");
+  } finally {
+    balloon.classList.remove("thinking");
+    busy = false;
+  }
 }
 function stopListening() {
   if (recognition && listening) {
