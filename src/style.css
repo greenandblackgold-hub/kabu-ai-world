@@ -37,3 +37,16 @@ footer{margin-top:auto;padding-top:20px;color:#c69a8c;font-size:11px;letter-spac
 @keyframes twinkle{0%,100%{opacity:.35;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
 @media(max-height:720px){.welcome{margin-top:15px}.play-area{height:275px}.balloon{transform:scale(.85)}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+.interaction{width:min(100%,620px)}
+.transcript{min-height:20px;max-width:100%;text-align:center;color:#a36c69;font-size:14px;overflow-wrap:anywhere}
+.listen-button:disabled{opacity:.7;cursor:wait}
+.listen-button.recording{background:linear-gradient(135deg,#b51b2d,#851126);animation:pulse 1.2s ease-in-out infinite}
+.listen-button.working{opacity:.75}
+.reset-button{border:0;background:transparent;color:#a36c69;text-decoration:underline;cursor:pointer;font:inherit;font-size:12px;padding:4px 10px}
+.balloon.thinking{animation:float .8s ease-in-out infinite,glow 1s ease-in-out infinite alternate}
+.balloon.talking{animation:talk .32s ease-in-out infinite alternate}
+@keyframes pulse{50%{box-shadow:0 0 0 10px #ef334022,0 9px 0 #b71e32}}
+@keyframes glow{to{filter:brightness(1.12)}}
+@keyframes talk{to{transform:translateY(-5px) scale(1.035)}}
+@media(max-width:560px){.scene{padding:18px 16px 12px}.play-area{height:290px}.balloon{width:190px;height:228px}.face{top:92px}.eye{left:61px}.eye:nth-child(2){left:119px}.smile{left:82px}}
