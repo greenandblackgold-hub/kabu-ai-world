@@ -10,7 +10,8 @@ export function mountKidsWorld() {
   launch.className = "kids-world-launch";
   launch.type = "button";
   launch.textContent = "🎬 የካቡ ካርቱን ዓለም";
-  topbar.append(launch);\n  launch.hidden = true;
+  topbar.append(launch);
+  launch.hidden = true;
 
   const world = document.createElement("section");
   world.id = "kids-world";
