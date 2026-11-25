@@ -31,7 +31,7 @@ app.use((req, res, next) => {
   next();
 });
 app.use(express.json({ limit: "32kb" }));
-app.get("/api/health", (_req, res) => res.json({ ok: true, configured: Boolean(API_KEY) }));
+app.get("/api/health", (_req, res) => res.json({ ok: true, configured: Boolean(API_KEY), version: "kabu-furry-voice-v1" }));
 
 function limitRequests(req, res, next) {
   const key = req.ip || "unknown";
