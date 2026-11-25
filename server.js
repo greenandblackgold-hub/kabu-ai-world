@@ -58,14 +58,49 @@ async function addisRequest(url, options = {}) {
   return body;
 }
 
+let greetingAudioBuffer = null;
+let greetingAudioPromise = null;
 app.get("/api/greeting", async (_req, res) => {
   if (!API_KEY) return res.status(503).json({ error: "Greeting voice is not configured yet." });
   try {
-    const tts = await addisRequest(API + "/api/v1/voice/generations", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ voice_id: "ti-filimon", language: "ti", text: "ሰላም ካቡየ፣ ደሓን ዲኻ?", output_format: "mp3_44100", client_request_id: randomUUID() }) });
-    const audio = tts?.data?.audio_url || tts?.audio_url;
-    if (!audio) return res.status(502).json({ error: "Greeting audio was not returned." });
-    res.json({ audio });
-  } catch (error) { console.error("KABU greeting audio failed:", error?.status || "network", error?.message); res.status(502).json({ error: "Greeting audio is temporarily unavailable." }); }
+    if (!greetingAudioBuffer) {
+      if (!greetingAudioPromise) {
+        greetingAudioPromise = (async () => {
+          const tts = await addisRequest(API + "/api/v1/voice/generations", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              voice_id: "ti-filimon",
+              language: "ti",
+              text: "ሰላም ካቡየ፣ ደሓን ዲኻ?",
+              output_format: "mp3_44100",
+              client_request_id: "kabu-opening-greeting-v1"
+            })
+          });
+          const audioUrl = tts?.data?.audio_url || tts?.audio_url;
+          if (!audioUrl) throw new Error("Greeting audio URL was not returned.");
+          const audioResponse = await fetch(audioUrl, { signal: AbortSignal.timeout(30_000) });
+          if (!audioResponse.ok) throw new Error("Greeting audio download failed.");
+          const audioBuffer = Buffer.from(await audioResponse.arrayBuffer());
+          if (!audioBuffer.length) throw new Error("Greeting audio was empty.");
+          return audioBuffer;
+        })();
+      }
+      try { greetingAudioBuffer = await greetingAudioPromise; }
+      finally { greetingAudioPromise = null; }
+    }
+    res.json({ audio: "/api/greeting-audio.mp3" });
+  } catch (error) {
+    console.error("KABU greeting audio failed:", error?.status || "network", error?.message);
+    res.status(502).json({ error: "Greeting audio is temporarily unavailable." });
+  }
+});
+app.get("/api/greeting-audio.mp3", (_req, res) => {
+  if (!greetingAudioBuffer) return res.status(404).end();
+  res.setHeader("Content-Type", "audio/mpeg");
+  res.setHeader("Cache-Control", "public, max-age=3600");
+  res.setHeader("Content-Length", greetingAudioBuffer.length);
+  res.send(greetingAudioBuffer);
 });
 app.post("/api/voice-turn", limitRequests, upload.single("audio"), async (req, res) => {
   if (!API_KEY) return res.status(503).json({ error: "ካቡ ንምስራሕ የAddis AI API ቁልፊ ገና ኣይተቐመጠን።" });
