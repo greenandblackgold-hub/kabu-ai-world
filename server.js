@@ -53,6 +53,15 @@ async function addisRequest(url, options = {}) {
   return body;
 }
 
+app.get("/api/greeting", async (_req, res) => {
+  if (!API_KEY) return res.status(503).json({ error: "Greeting voice is not configured yet." });
+  try {
+    const tts = await addisRequest(API + "/api/v1/voice/generations", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ voice_id: "ti-filimon", language: "ti", text: "ሰላም ካቡየ፣ ደሓን ዲኻ?", output_format: "mp3_44100", client_request_id: randomUUID() }) });
+    const audio = tts?.data?.audio_url || tts?.audio_url;
+    if (!audio) return res.status(502).json({ error: "Greeting audio was not returned." });
+    res.json({ audio });
+  } catch (error) { console.error("KABU greeting audio failed:", error?.status || "network", error?.message); res.status(502).json({ error: "Greeting audio is temporarily unavailable." }); }
+}
 app.post("/api/voice-turn", limitRequests, upload.single("audio"), async (req, res) => {
   if (!API_KEY) return res.status(503).json({ error: "ካቡ ንምስራሕ የAddis AI API ቁልፊ ገና ኣይተቐመጠን።" });
   if (!req.file) return res.status(400).json({ error: "ድምጺ ኣይተረኽበን።" });
