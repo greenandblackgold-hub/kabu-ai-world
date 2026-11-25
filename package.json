@@ -6,14 +6,17 @@
   "main": "electron/main.cjs",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
+    "desktop:dev": "concurrently -k \"vite --host 127.0.0.1\" \"wait-on http://127.0.0.1:5173 && electron .\"",
     "build": "vite build",
-    "start": "electron .",
+    "start": "npm run build && electron .",
     "dist:win": "npm run build && electron-builder --win nsis"
   },
   "devDependencies": {
+    "concurrently": "^9.1.2",
     "electron": "^37.2.0",
     "electron-builder": "^26.0.12",
-    "vite": "^6.3.5"
+    "vite": "^6.3.5",
+    "wait-on": "^8.0.3"
   },
   "build": {
     "appId": "com.kabuai.world",
