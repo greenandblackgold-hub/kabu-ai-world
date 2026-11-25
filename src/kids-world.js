@@ -33,7 +33,7 @@ export function mountKidsWorld() {
     <div class="kw-stage" role="img" aria-label="ብሓቂ 3D ዝተሰርሐ ዓለም ካቡ">
       <div class="kw-loading"><span class="kw-loader"></span><b>3D ዓለም ይዳሎ ኣሎ…</b><small>ንቑሩብ ጽናሕ</small></div>
       <div class="kw-canvas"></div>
-      <div class="kw-stage-label">✨ KABU 3D WORLD</div>
+      <div class="kw-stage-label">✨ KABU LIVING 3D WORLD</div><div class="kw-animal-talk" aria-live="polite"><b id="kw-speaker">ቦቢ 🐶</b><span id="kw-dialogue">ሰላም ኣዕሩኽ! ከመይ ኣለኹም?</span></div>
       <div class="kw-stage-error" hidden>3D ዓለም ክኸፍት ኣይከኣለን። ኢንተርነትካ ኣረጋግጽ እሞ ደጊምካ ፈትን።</div>
     </div>
     <div class="kw-story-caption" aria-live="polite"><span>✨</span><span id="kw-message">ቦቢ ውሻን ሮሚ ፈረስን ኣብ 3D ዓለም ክትራኸቦም ድሉው ዲኻ?</span></div>
@@ -54,7 +54,9 @@ export function mountKidsWorld() {
   const loading = world.querySelector(".kw-loading");
   const errorBox = world.querySelector(".kw-stage-error");
   const status = world.querySelector("#kw-status");
-  let renderer, scene, camera, clock, animationId;
+  const speakerLabel=world.querySelector("#kw-speaker");
+  const dialogueLabel=world.querySelector("#kw-dialogue");
+  let renderer, scene, camera, clock, animationId, conversationTimer;
   let paused = false, dancing = false, cameraMoving = false, soundOn = true;
   let currentPlace = "town", storyTimer = null, audio = null, disposed = false;
   const movers = [], animalParts = [], cars = [];
@@ -308,6 +310,8 @@ export function mountKidsWorld() {
       for(const car of cars){car.position.x+=car.userData.direction*delta*(car.userData.direction>0?3.4:2.6);if(car.position.x>21)car.position.x=-21;if(car.position.x< -21)car.position.x=21;}
       for(const item of animalParts){if(item.tail){item.part.rotation.z=Math.sin(t*5)*.28;}else item.part.rotation.x=Math.sin(t*7+item.phase)*(dancing?.75:.3);}
       for(const item of movers){if(item.kind==="cloud")item.object.position.x+=Math.sin(t*.35+item.phase)*delta*.25;if(item.kind==="bird"){item.object.position.y+=Math.sin(t*4+item.phase)*delta*.45;item.object.rotation.z=Math.sin(t*2+item.phase)*.15;}}
+      worldGroup.userData.animals.position.x=Math.sin(t*.16)*2.1;
+      worldGroup.userData.animals.position.z=Math.cos(t*.13)*1.15;
       worldGroup.userData.herd.forEach((animal,i)=>{
         const phase=t*1.25+animal.userData.phase+i*.72;
         animal.position.x=-7+(i%4)*4.5+Math.sin(t*.24+i*.45)*.9;
@@ -334,6 +338,23 @@ export function mountKidsWorld() {
       loading.hidden=true;
       status.textContent="● LIVE 3D";
       animate();
+      const chats=[
+        ["ቦቢ 🐶","ሰላም ኣዕሩኽ! ሎሚ ኣበይ ንኺድ?"],
+        ["ሲምባ 🦁","ኣብ ሓምለዋይ ጫካ ክንጻወት እደሊ!"],
+        ["ኤሊ 🐘","ኣነ እውን ክመጽእ እየ። ብሓባር ንኺድ!"],
+        ["ዚብራ 🦓","ተጠንቀቑ! ኣብ መንገዲ ወፍታት ይዝምራ ኣለዋ!"],
+        ["ሚሚ 🐰","ዋው! ኣብ ሓባር ምጉዓዝ ኣዝዩ ደስ ይብል!"]
+      ];
+      let chatIndex=0;
+      conversationTimer=setInterval(()=>{
+        if(disposed||paused||!worldGroup)return;
+        const [speaker,line]=chats[chatIndex%chats.length];
+        speakerLabel.textContent=speaker;
+        dialogueLabel.textContent=line;
+        worldGroup.userData.herd[chatIndex%worldGroup.userData.herd.length].userData.head.rotation.y=.48;
+        say(line);
+        chatIndex++;
+      },6200);
       if("ResizeObserver" in window){new ResizeObserver(resize).observe(canvasHost);}else window.addEventListener("resize",resize);
     } catch(err) {
       console.error("Kabu 3D world failed to initialize",err);
@@ -370,6 +391,6 @@ export function mountKidsWorld() {
   }));
   initialize();
 
-  const cleanup=()=>{disposed=true;stopStory();cancelAnimationFrame(animationId);if(renderer)renderer.dispose();if(audio)audio.pause();if("speechSynthesis"in window)speechSynthesis.cancel();};
+  const cleanup=()=>{disposed=true;clearInterval(conversationTimer);stopStory();cancelAnimationFrame(animationId);if(renderer)renderer.dispose();if(audio)audio.pause();if("speechSynthesis"in window)speechSynthesis.cancel();};
   window.addEventListener("pagehide",cleanup,{once:true});
 }
