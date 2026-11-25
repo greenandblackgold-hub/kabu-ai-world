@@ -254,7 +254,6 @@ export function mountKidsWorld() {
     const animals=new THREE.Group(); animals.add(dog,horse,giraffeGroup); world.add(animals);
     for(let i=0;i<6;i++) makeBird(world,-10+i*4,5+(i%2),-2-i);
     world.userData={town,forest,beach,animals,dog,horse,world};
-    applyPlace("town");
     resize();
     return world;
   }
@@ -301,6 +300,7 @@ export function mountKidsWorld() {
       if(disposed) return;
       window.THREE=THREE;
       worldGroup=buildWorld();
+      applyPlace("town");
       loading.hidden=true;
       status.textContent="● LIVE 3D";
       animate();
