@@ -122,8 +122,7 @@ async function sendVoice(blob) {
     history = history.slice(-8);
     if (result.audio) {
       if (currentAudio) { currentAudio.pause(); URL.revokeObjectURL(currentAudio.src); }
-      const audioBlob = await (await fetch(result.audio)).blob();
-      currentAudio = new Audio(URL.createObjectURL(audioBlob));
+      currentAudio = new Audio(result.audio);
       currentAudio.onplay = () => balloon.classList.add("talking");
       currentAudio.onended = () => balloon.classList.remove("talking");
       currentAudio.onerror = () => balloon.classList.remove("talking");
