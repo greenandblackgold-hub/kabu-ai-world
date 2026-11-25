@@ -188,4 +188,7 @@ app.use((error, _req, res, _next) => {
   });
 });
 
-app.listen(PORT, "0.0.0.0", () => console.log(`KABU AI listening on ${PORT}`));
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`KABU AI listening on ${PORT}`);
+  console.log(`KABU voice provider configured: ${Boolean(API_KEY)}`);
+});
