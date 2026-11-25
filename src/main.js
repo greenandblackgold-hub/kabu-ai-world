@@ -194,14 +194,6 @@ function playGreetingIfReady() {
   }).catch(() => { /* Chrome may require a click before playing sound. */ });
 }
 balloon.addEventListener("click", () => { balloon.classList.add("waving"); playGreetingIfReady(); });
-let firstGestureHandled = false;
-const unlockGreeting = () => {
-  if (firstGestureHandled) return;
-  firstGestureHandled = true;
-  if (greetingAudio && greetingAudio.paused) playGreetingIfReady();
-};
-window.addEventListener("pointerdown", unlockGreeting, { once: true });
-window.addEventListener("keydown", unlockGreeting, { once: true });
 window.addEventListener("DOMContentLoaded", () => { balloon.classList.add("waving"); setTimeout(() => balloon.classList.remove("waving"), 2400); });
 loadGreeting();
 
