@@ -1,26 +1,38 @@
 # KABU AI – የካቡ የመጫወቻ ዓለም
 
-A Windows desktop companion for a two-year-old child. Kabu is a large, bright-red balloon character. The intended interaction language is Tigrinya only.
+KABU AI is a Tigrinya-first voice companion that runs in Google Chrome.
 
-## Project status
+## How it works
+1. A parent opens the HTTPS website and grants microphone permission.
+2. The child presses the microphone button to speak (up to 20 seconds per turn), then presses it again to finish.
+3. The server transcribes Tigrinya with Addis Scribe, asks the language model for a short child-safe Tigrinya reply, and generates spoken Tigrinya audio with Addis Voices 2.
+4. The browser plays the reply and keeps a short conversation history in memory for follow-up turns.
 
-This repository contains the initial Electron desktop shell and a Windows packaging workflow. This is NOT yet the finished AI companion. Reliable Tigrinya speech recognition, natural Tigrinya conversation, child-safe response logic, and long-term learning are not implemented or validated yet.
+## Required configuration
+Set `ADDIS_API_KEY` as a secret environment variable on the server. Never put it in browser code or GitHub. The API key is not included in this repository.
 
-## Development
-
+## Run locally
 - Node.js 22+
-- npm install
-- npm run dev
+- `npm install`
+- Set `ADDIS_API_KEY` in the shell environment
+- `npm run dev`
 
-## Build a Windows installer
+## Deploy on Render
+- Runtime: Node
+- Build command: `npm install && npm run build`
+- Start command: `npm start`
+- Environment variable: `ADDIS_API_KEY` (secret)
+- The app serves the Chrome page and the private API from the same HTTPS service.
 
-- npm run dist:win
-- GitHub Actions also builds a Windows installer on pushes to main and stores it as a workflow artifact.
+## Privacy and child safety
+- Microphone is activated only after a user presses the button.
+- Audio is sent to the configured speech service for transcription and is not stored by this app.
+- Conversation history is held only in the open browser tab and cleared by “ዕላል ኣሕድስ” or closing the tab.
+- Kabu is instructed to use short, gentle, age-appropriate Tigrinya, avoid collecting personal information, and direct a child to a parent for unsafe or distressing situations.
+- This application is not a substitute for adult supervision.
 
-## Safety and privacy
+## Status
+The Chrome voice-chat flow is implemented against the documented Addis AI Tigrinya STT, chat, and TTS endpoints. End-to-end speech accuracy, child voice recognition, and the actual account API key still require a live test before declaring production readiness.
 
-The app is designed for a very young child. Microphone use must be explicit and visible. Do not collect or upload a child's voice or personal data without a parent-controlled, clearly disclosed consent flow. No speech is transmitted by this starter shell.
-
-## Scope boundary
-
-This repository is dedicated only to KABU AI. Do not connect it to or modify any Black Gold gaming project or infrastructure.
+## Project isolation
+This repository is dedicated only to KABU AI. It must not connect to or modify any Black Gold gaming project or infrastructure.
