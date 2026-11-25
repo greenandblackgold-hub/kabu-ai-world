@@ -13,7 +13,7 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 12 * 1024 * 1024, files: 1 },
   fileFilter: (_req, file, cb) => {
-    const allowed = /^(audio\/(webm|mp4|ogg|wav|mpeg|mp3|x-wav)|video\/webm)$/i.test(file.mimetype);
+    const allowed = /^(audio\/(webm|mp4|ogg|wav|mpeg|mp3|x-wav))(?:;.*)?$|^video\/webm(?:;.*)?$/i.test(file.mimetype);
     cb(allowed ? null : new Error("የድምጺ ፋይል ቅርጺ ኣይድገፍን።"), allowed);
   }
 });
