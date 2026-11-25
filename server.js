@@ -131,7 +131,7 @@ app.post("/api/voice-turn", limitRequests, upload.single("audio"), async (req, r
 });
 
 app.use(express.static(path.join(root, "dist"), { index: "index.html" }));
-app.get("*", (_req, res) => res.sendFile(path.join(root, "dist", "index.html")));
+app.get("/{*splat}", (_req, res) => res.sendFile(path.join(root, "dist", "index.html")));
 app.use((error, _req, res, _next) => {
   console.error("KABU request error:", error.message);
   res.status(error.code === "LIMIT_FILE_SIZE" ? 413 : 400).json({
