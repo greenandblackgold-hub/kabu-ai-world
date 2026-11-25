@@ -10,12 +10,12 @@ export function mountKidsWorld() {
   launch.className = "kids-world-launch";
   launch.type = "button";
   launch.textContent = "🎬 የካቡ ካርቱን ዓለም";
-  topbar.append(launch);
+  topbar.append(launch);\n  launch.hidden = true;
 
   const world = document.createElement("section");
   world.id = "kids-world";
   world.className = "kids-world";
-  world.hidden = true;
+  world.hidden = false;
   world.setAttribute("aria-label", "የካቡ የልጆች ካርቱን መጫወቻ ዓለም");
   world.innerHTML = `
     <header class="kw-head">
@@ -65,7 +65,7 @@ export function mountKidsWorld() {
     </div>
     <footer class="kw-footer"><span>ካቡ ኩሉ ግዜ ምሳኻ እዩ! 💛</span><strong id="kw-score">⭐ 0</strong></footer>
   `;
-  scene.append(world);
+  scene.insertBefore(world, scene.querySelector(".welcome"));
 
   const message = world.querySelector("#kw-message");
   const score = world.querySelector("#kw-score");
