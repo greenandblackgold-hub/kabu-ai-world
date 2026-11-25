@@ -15,7 +15,7 @@ export function mountKidsWorld() {
   const world = document.createElement("section");
   world.id = "kids-world";
   world.className = "kids-world";
-  world.hidden = true;
+  world.hidden = false;
   world.setAttribute("aria-label", "የካቡ የልጆች ካርቱን መጫወቻ ዓለም");
   world.innerHTML = `
     <header class="kw-head">
