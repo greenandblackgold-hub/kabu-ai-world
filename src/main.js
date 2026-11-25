@@ -48,12 +48,17 @@ app.innerHTML = `
     <section class="interaction">
       <p id="kabu-message" class="message" aria-live="polite">ሰላም ካቡየ፣ ደሓን ዲኻ?</p>
       <div id="transcript" class="transcript" aria-live="polite"></div>
+      <form id="text-form" class="text-form">
+        <input id="child-text" class="child-input" type="text" maxlength="240" autocomplete="off" placeholder="ካቡ እንታይ ክትብሎ ትደሊ?" aria-label="ንካቡ መልእኽቲ ጽሓፍ">
+        <button class="send-button" type="submit">ስደድ</button>
+      </form>
       <button id="listen" class="listen-button" type="button"><span class="mic">🎤</span><span id="button-label">ካቡ፡ ስምዓኒ!</span></button>
       <p id="status" class="status">ካቡ ሰላምታ ይህበካ ኣሎ። ድምጹ እንተዘይተሰሚዑ ካቡ ጠውቕ።</p>
       <button id="reset" class="reset-button" type="button">ዕላል ኣሕድስ</button>
     </section>
     <footer>ብፍቕሪ ንካቡ · KABU AI</footer>
   </main>`;
+
 
 const listenButton = document.querySelector("#listen");
 const buttonLabel = document.querySelector("#button-label");
@@ -62,146 +67,142 @@ const message = document.querySelector("#kabu-message");
 const transcript = document.querySelector("#transcript");
 const balloon = document.querySelector("#kabu");
 const resetButton = document.querySelector("#reset");
-let greetingAudio = null;
-let recorder = null;
-let stream = null;
-let chunks = [];
-let recordingTimer = null;
-let busy = false;
+const textForm = document.querySelector("#text-form");
+const textInput = document.querySelector("#child-text");
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = null;
+let listening = false;
 let history = [];
-let currentAudio = null;
+let busy = false;
+let voices = [];
 
-const setStatus = (text) => { status.textContent = text; };
-const setBusy = (value) => {
-  busy = value;
-  listenButton.disabled = value;
-  listenButton.classList.toggle("working", value);
-};
-const stopTracks = () => {
-  if (stream) stream.getTracks().forEach((track) => track.stop());
-  stream = null;
-};
-const stopRecording = () => {
-  if (recordingTimer) clearTimeout(recordingTimer);
-  recordingTimer = null;
-  if (recorder && recorder.state === "recording") recorder.stop();
-};
-
-listenButton.addEventListener("click", async () => {
-  if (busy) return;
-  playGreetingIfReady();
-  if (recorder?.state === "recording") {
-    stopRecording();
+function setStatus(value) { status.textContent = value; }
+function setTalking(value) {
+  balloon.classList.toggle("talking", value);
+}
+function refreshVoices() {
+  voices = window.speechSynthesis ? speechSynthesis.getVoices() : [];
+}
+if ("speechSynthesis" in window) {
+  refreshVoices();
+  speechSynthesis.onvoiceschanged = refreshVoices;
+}
+function speak(text) {
+  if (!("speechSynthesis" in window)) {
+    setStatus("ድምጺ ምስማዕ ብዚ ብራውዘር ኣይድገፍን። ጽሑፉ ግን ኣብዚ ይታይ።");
     return;
   }
+  speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "ti-ER";
+  const tigrinyaVoice = voices.find(v => /^ti([-_]|$)/i.test(v.lang));
+  if (tigrinyaVoice) utterance.voice = tigrinyaVoice;
+  utterance.rate = 0.88;
+  utterance.pitch = 1.12;
+  utterance.onstart = () => { setTalking(true); balloon.classList.add("waving"); };
+  utterance.onend = () => { setTalking(false); balloon.classList.remove("waving"); };
+  utterance.onerror = () => { setTalking(false); setStatus("እቲ ብራውዘር ዘሎ ድምጺ ቋንቋ ትግርኛ ክዛረብ ኣይከኣለን። ጽሑፍ ግን ክትጥቀም ትኽእል።"); };
+  speechSynthesis.speak(utterance);
+}
+function answerFor(raw) {
+  const q = raw.toLowerCase().replace(/[።፣!?.,]/g, " ").trim();
+  const has = (...words) => words.some(w => q.includes(w));
+  if (has("ሰላም", "hello", "hi")) return "ሰላም ዓርከይ! ሎሚ እንታይ ንጻወት?";
+  if (has("ከመይ", "ደሓን", "ኣለኻ")) return "ጽቡቕ ኣለኹ! ንስኻኸ ደሓን ዲኻ?";
+  if (has("ስም", "መን ኢኻ")) return "ኣነ ካቡ እየ! ቀይሕ ጸጉራም ዓርክኻ።";
+  if (has("ቀይሕ", "ሕብሪ", "ሕብርታት")) return "ቀይሕ ሕብሪ እዩ! ካቡ እውን ቀይሕ እዩ።";
+  if (has("ቁጽሪ", "ቁጸር", "ሓደ", "ክልተ", "ሰለስተ")) return "ሓደ፣ ክልተ፣ ሰለስተ! ብሓባር ንቁጸር።";
+  if (has("ድሙ", "ድሙ", "ውሻ", "ከልቢ", "እንስሳ")) return "ድሙ ሚያው ይብል! እቲ እትፈትዎ እንስሳ እንታይ እዩ?";
+  if (has("ጸወታ", "ንጻወት", "ጸወት")) return "እሺ! ንሕብርታት ወይ ንቁጽሪ ንጻወት። ኣየናይ ትመርጽ?";
+  if (has("ፍቕሪ", "ፈትወካ")) return "ኣነ እውን ምሳኻ ምጽዋት እፈቱ!";
+  if (has("ደኺመ", "ሓዚነ", "ፈሪሐ", "ጎዲኡኒ", "ሕማም")) return "የቐንየለይ ዓርከይ። በጃኻ ሕጂ ንኣዴኻ ወይ ንኣቦኻ ንገሮም።";
+  if (has("ኣዴ", "ኣቦ", "ወለዲ")) return "ወለድኻ ኣዝዮም ይፈትዉኻ። ምሳታቶም ተጻወት!";
+  return "ዝበልካዮ ክርዳእ እየ ዝፍትን ዘለኹ። ብቐስታ እንደገና ትብሎ ዶ?";
+}
+function respond(raw) {
+  const text = String(raw || "").trim();
+  if (!text || busy) return;
+  busy = true;
+  balloon.classList.add("thinking");
+  transcript.textContent = "ንስኻ፡ " + text;
+  const reply = answerFor(text);
+  message.textContent = reply;
+  history.push({ role: "user", content: text }, { role: "assistant", content: reply });
+  history = history.slice(-12);
+  setStatus("ካቡ መልሲ ሂቡካ ኣሎ። ደጊምካ ክትዛረብ ወይ ክትጽሕፍ ትኽእል።");
+  balloon.classList.remove("thinking");
+  busy = false;
+  speak(reply);
+}
+function stopListening() {
+  if (recognition && listening) {
+    try { recognition.stop(); } catch {}
+  }
+  listening = false;
+  listenButton.classList.remove("recording");
+  buttonLabel.textContent = "ካቡ፡ ስምዓኒ!";
+}
+listenButton.addEventListener("click", () => {
+  if (!SpeechRecognition) {
+    setStatus("እዚ Chrome ናይ ድምጺ ምርዳእ ኣይድግፍን። ኣብ ታሕቲ ብጽሑፍ ስደድ።");
+    textInput.focus();
+    return;
+  }
+  if (listening) { stopListening(); return; }
   try {
-    if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
-      throw new Error("እዚ ብራውዘር ማይክሮፎን ኣይድግፍን። Chrome ኣብ HTTPS ክፈት።");
-    }
-    stream = await navigator.mediaDevices.getUserMedia({
-      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-      video: false
-    });
-    const mimeType = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"].find((type) => MediaRecorder.isTypeSupported(type));
-    recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
-    chunks = [];
-    recorder.ondataavailable = (event) => { if (event.data?.size) chunks.push(event.data); };
-    recorder.onerror = () => {
-      stopTracks();
-      setStatus("ማይክሮፎን ኣብ ምጥቃም ጸገም ተፈጢሩ። እንደገና ፈትን።");
-      listenButton.classList.remove("recording");
-      buttonLabel.textContent = "ካቡ፡ ስምዓኒ!";
+    recognition = new SpeechRecognition();
+    recognition.lang = "ti-ER";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.onstart = () => {
+      listening = true;
+      listenButton.classList.add("recording");
+      buttonLabel.textContent = "ይሰምዕ ኣሎ…";
+      setStatus("ካቡ ይሰምዕ ኣሎ። ሕጂ ተዛረብ።");
     };
-    recorder.onstop = async () => {
-      stopTracks();
-      listenButton.classList.remove("recording");
-      buttonLabel.textContent = "ካቡ፡ ስምዓኒ!";
-      const audioBlob = new Blob(chunks, { type: recorder.mimeType || "audio/webm" });
-      if (!audioBlob.size) { setStatus("ድምጺ ኣይተቐርጸን። እንደገና ፈትን።"); return; }
-      await sendVoice(audioBlob);
+    recognition.onresult = event => {
+      const heard = event.results?.[0]?.[0]?.transcript || "";
+      stopListening();
+      if (heard.trim()) respond(heard);
+      else setStatus("ድምጽኻ ኣይተረድአን። እንደገና ፈትን ወይ ጽሓፍ።");
     };
-    recorder.start(250);
-    listenButton.classList.add("recording");
-    buttonLabel.textContent = "ደው ኣብል";
-    setStatus("ካቡ ይሰምዕ ኣሎ… ምስ ወዳእካ ደጊምካ ጠውቕ።");
-    recordingTimer = setTimeout(stopRecording, 20000);
-  } catch (error) {
-    stopTracks();
-    setStatus(error.message || "ማይክሮፎን ኣይተኸፍተን። ፍቓድ ሃብ።");
+    recognition.onerror = event => {
+      stopListening();
+      const msg = event.error === "not-allowed"
+        ? "ማይክሮፎን ፍቓድ ኣይተዋህበን። ኣብ Chrome ፍቓድ ሃብ።"
+        : "ናይ ድምጺ ምርዳእ ኣይተሳኸዐን። ትግርኛ ኣብ ዚ መሳርሒ ክድገፍ ኣይክእልን ይኸውን። ብጽሑፍ ፈትን።";
+      setStatus(msg);
+    };
+    recognition.onend = () => stopListening();
+    recognition.start();
+  } catch {
+    stopListening();
+    setStatus("ማይክሮፎን ኣይተኸፍተን። ብጽሑፍ ፈትን።");
   }
 });
-
-async function sendVoice(blob) {
-  setBusy(true);
-  balloon.classList.add("thinking");
-  message.textContent = "ካቡ ይሓስብ ኣሎ…";
-  setStatus("ድምጽኻ እናተረድአ እዩ። ቁሩብ ተጸበ።");
-  try {
-    const form = new FormData();
-    const extension = blob.type.includes("mp4") ? "m4a" : "webm";
-    form.append("audio", blob, `kabu-voice.${extension}`);
-    form.append("history", JSON.stringify(history.slice(-8)));
-    const response = await fetch("/api/voice-turn", { method: "POST", body: form });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(result.error || "ካቡ ኣብዚ ግዜ ክምልስ ኣይከኣለን።");
-    transcript.textContent = result.transcript ? "ንስኻ፡ " + result.transcript : "";
-    message.textContent = result.reply;
-    history.push({ role: "user", content: result.transcript }, { role: "assistant", content: result.reply });
-    history = history.slice(-8);
-    if (result.audio) {
-      if (currentAudio) { currentAudio.pause(); URL.revokeObjectURL(currentAudio.src); }
-      currentAudio = new Audio(result.audio);
-      currentAudio.onplay = () => balloon.classList.add("talking");
-      currentAudio.onended = () => balloon.classList.remove("talking");
-      currentAudio.onerror = () => balloon.classList.remove("talking");
-      await currentAudio.play();
-    }
-    setStatus("ካቡ መልሲ ሂቡካ ኣሎ። እንደገና ክትዛረብ ትኽእል ኢኻ።");
-  } catch (error) {
-    message.textContent = "ካቡ ኣብዚ ግዜ ኣይሰምዓካን።";
-    setStatus(error.message || "ጸገም ተፈጢሩ። እንደገና ፈትን።");
-  } finally {
-    balloon.classList.remove("thinking");
-    setBusy(false);
-  }
-}
-
-async function loadGreeting() {
-  try {
-    const health = await fetch("/api/health", { cache: "no-store" });
-    const healthData = await health.json().catch(() => ({}));
-    if (!health.ok || !healthData.configured) {
-      setStatus("ካቡ ይንቀሳቐስ ኣሎ፤ ግን የድምጺ AI ቁልፊ ገና ኣይተዳለወን።");
-      return;
-    }
-    const response = await fetch("/api/greeting", { cache: "no-store" });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok || !data.audio) throw new Error(data.error || "Greeting audio unavailable");
-    greetingAudio = new Audio(data.audio);
-    greetingAudio.preload = "auto";
-    setStatus("ካቡ ሰላምታ ንምሃብ ተዳልዩ ኣሎ። ድምጺ ንምስማዕ ካቡ ጠውቕ።");
-    playGreetingIfReady();
-  } catch {
-    setStatus("ካቡ ኣሎ፤ ግን የድምጺ ሰላምታ ኣብዚ ግዜ ኣይተሳኸዐን።");
-  }
-}
-function playGreetingIfReady() {
-  if (!greetingAudio) return;
-  greetingAudio.currentTime = 0;
-  greetingAudio.play().then(() => {
-    balloon.classList.add("talking", "waving");
-    greetingAudio.onended = () => balloon.classList.remove("talking", "waving");
-  }).catch(() => { /* Chrome may require a click before playing sound. */ });
-}
-balloon.addEventListener("click", () => { balloon.classList.add("waving"); playGreetingIfReady(); });
-window.addEventListener("DOMContentLoaded", () => { balloon.classList.add("waving"); setTimeout(() => balloon.classList.remove("waving"), 2400); });
-loadGreeting();
-
+textForm.addEventListener("submit", event => {
+  event.preventDefault();
+  const value = textInput.value;
+  if (!value.trim()) return;
+  textInput.value = "";
+  respond(value);
+});
+balloon.addEventListener("click", () => {
+  balloon.classList.add("waving");
+  speak("ሰላም ካቡየ፣ ደሓን ዲኻ?");
+});
+window.addEventListener("load", () => {
+  balloon.classList.add("waving");
+  setTimeout(() => balloon.classList.remove("waving"), 2400);
+  setStatus("ካቡ ድሉው እዩ። ማይክሮፎን ወይ ጽሑፍ ተጠቐም። እዚ ስሪት ብነጻ ኣብ ብራውዘር ይሰርሕ።");
+  setTimeout(() => speak("ሰላም ካቡየ፣ ደሓን ዲኻ?"), 700);
+});
 resetButton.addEventListener("click", () => {
-  if (busy || recorder?.state === "recording") return;
+  if (listening) stopListening();
   history = [];
   transcript.textContent = "";
   message.textContent = "ሰላም! ካቡ እዚ ኣሎ።";
   setStatus("ሓድሽ ዕላል ተጀሚሩ።");
-  if (currentAudio) { currentAudio.pause(); URL.revokeObjectURL(currentAudio.src); currentAudio = null; }
+  if (window.speechSynthesis) speechSynthesis.cancel();
 });
