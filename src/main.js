@@ -1,4 +1,5 @@
 import "./style.css";
+import { mountKidsWorld } from "./kids-world.js";
 
 const app = document.querySelector("#app");
 app.innerHTML = `
@@ -227,3 +228,6 @@ resetButton.addEventListener("click", () => {
   if (kabuAudio) { kabuAudio.pause(); kabuAudio = null; }
   setTalking(false);
 });
+
+
+mountKidsWorld();
