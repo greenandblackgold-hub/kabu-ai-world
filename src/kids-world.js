@@ -1,6 +1,6 @@
 import "./kids-world.css";
 
-const THREE_URL = "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
+const THREE_URL = "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";\nlet THREE;
 
 export function mountKidsWorld() {
   const topbar = document.querySelector(".topbar");
@@ -239,7 +239,7 @@ export function mountKidsWorld() {
       sphere(.5,.32,.45,cloudMat,cloud,-.58,-.07,.05);
       movers.push({kind:"cloud",object:cloud,phase:i*1.4});
     }
-    makeCar(world,-"#ef476f",0,0);
+    makeCar(world,"#ef476f",0,0);
     makeCar(world,"#3a86ff",-13,2.35,-1);
     makeCar(world,"#ffbe0b",13,-.05,1);
     const dog=makeDog(world,-3,6.3);
@@ -297,7 +297,7 @@ export function mountKidsWorld() {
 
   async function initialize() {
     try {
-      const THREE=await import(/* @vite-ignore */ THREE_URL);
+      THREE=await import(/* @vite-ignore */ THREE_URL);
       if(disposed) return;
       window.THREE=THREE;
       worldGroup=buildWorld();
