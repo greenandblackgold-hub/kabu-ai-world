@@ -87,22 +87,31 @@ if ("speechSynthesis" in window) {
   refreshVoices();
   speechSynthesis.onvoiceschanged = refreshVoices;
 }
-function speak(text) {
-  if (!("speechSynthesis" in window)) {
-    setStatus("ድምጺ ምስማዕ ብዚ ብራውዘር ኣይድገፍን። ጽሑፉ ግን ኣብዚ ይታይ።");
-    return;
+let kabuAudio = null;
+async function speak(text) {
+  if (kabuAudio) { kabuAudio.pause(); kabuAudio = null; }
+  if ("speechSynthesis" in window) speechSynthesis.cancel();
+  setTalking(true);
+  balloon.classList.add("waving");
+  try {
+    const response = await fetch("/api/speech", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: String(text || "").slice(0, 500) })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.audio) throw new Error("speech_unavailable");
+    const audioBytes = Uint8Array.from(atob(data.audio), ch => ch.charCodeAt(0));
+    const audioBlob = new Blob([audioBytes], { type: data.mimeType || "audio/wav" });
+    kabuAudio = new Audio(URL.createObjectURL(audioBlob));
+    kabuAudio.onended = () => { setTalking(false); balloon.classList.remove("waving"); };
+    kabuAudio.onerror = () => { setTalking(false); balloon.classList.remove("waving"); setStatus("ድምጺ ካቡ ኣይተሰምዐን። እንደገና ፈትን።"); };
+    await kabuAudio.play();
+  } catch {
+    setTalking(false);
+    balloon.classList.remove("waving");
+    setStatus("ድምጺ ካቡ ንግዚኡ ኣይተሳኸዐን። ጽሑፍ ግን ይሰርሕ።");
   }
-  speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = "ti-ER";
-  const tigrinyaVoice = voices.find(v => /^ti([-_]|$)/i.test(v.lang));
-  if (tigrinyaVoice) utterance.voice = tigrinyaVoice;
-  utterance.rate = 0.88;
-  utterance.pitch = 1.12;
-  utterance.onstart = () => { setTalking(true); balloon.classList.add("waving"); };
-  utterance.onend = () => { setTalking(false); balloon.classList.remove("waving"); };
-  utterance.onerror = () => { setTalking(false); setStatus("እቲ ብራውዘር ዘሎ ድምጺ ቋንቋ ትግርኛ ክዛረብ ኣይከኣለን። ጽሑፍ ግን ክትጥቀም ትኽእል።"); };
-  speechSynthesis.speak(utterance);
 }
 async function respond(raw) {
   const text = String(raw || "").trim();
@@ -206,7 +215,7 @@ window.addEventListener("load", () => {
   balloon.classList.add("waving");
   setTimeout(() => balloon.classList.remove("waving"), 2400);
   setStatus("ካቡ ድሉው እዩ። ማይክሮፎን ወይ ጽሑፍ ተጠቐም። እዚ ስሪት ብነጻ ኣብ ብራውዘር ይሰርሕ።");
-  setTimeout(() => speak("ሰላም ካቡየ፣ ደሓን ዲኻ?"), 700);
+  setStatus("ካቡ ድሉው እዩ። ካቡ ጠውቕ እሞ ብድምጺ ሰላም ክብለካ እዩ።");
 });
 resetButton.addEventListener("click", () => {
   if (listening) stopListening();
@@ -215,4 +224,6 @@ resetButton.addEventListener("click", () => {
   message.textContent = "ሰላም! ካቡ እዚ ኣሎ።";
   setStatus("ሓድሽ ዕላል ተጀሚሩ።");
   if (window.speechSynthesis) speechSynthesis.cancel();
+  if (kabuAudio) { kabuAudio.pause(); kabuAudio = null; }
+  setTalking(false);
 });
