@@ -61,7 +61,7 @@ app.get("/api/greeting", async (_req, res) => {
     if (!audio) return res.status(502).json({ error: "Greeting audio was not returned." });
     res.json({ audio });
   } catch (error) { console.error("KABU greeting audio failed:", error?.status || "network", error?.message); res.status(502).json({ error: "Greeting audio is temporarily unavailable." }); }
-}
+});
 app.post("/api/voice-turn", limitRequests, upload.single("audio"), async (req, res) => {
   if (!API_KEY) return res.status(503).json({ error: "ካቡ ንምስራሕ የAddis AI API ቁልፊ ገና ኣይተቐመጠን።" });
   if (!req.file) return res.status(400).json({ error: "ድምጺ ኣይተረኽበን።" });
