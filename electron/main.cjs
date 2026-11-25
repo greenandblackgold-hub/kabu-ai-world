@@ -16,10 +16,11 @@ function createWindow() {
     }
   });
 
-  if (app.isPackaged) {
-    win.loadFile(path.join(__dirname, "../dist/index.html"));
+  const devServerUrl = process.env.VITE_DEV_SERVER_URL;
+  if (devServerUrl) {
+    win.loadURL(devServerUrl);
   } else {
-    win.loadURL("http://127.0.0.1:5173");
+    win.loadFile(path.join(__dirname, "../dist/index.html"));
   }
 }
 
