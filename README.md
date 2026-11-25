@@ -32,7 +32,9 @@ Set `ADDIS_API_KEY` as a secret environment variable on the Render service. Neve
 - This application is not a substitute for adult supervision.
 
 ## Status
-The Chrome microphone recording, server-side Tigrinya transcription, conversational response, and Tigrinya speech playback flow are implemented. Addis Scribe documents Tigrinya STT (`language=ti`), and Addis Voices 2 documents seven Tigrinya voices. The live service still needs the owner's Addis AI API key in Render and end-to-end testing with real child speech. Text-generation output quality in Tigrinya must also be checked with native speakers before production use.
+The Chrome app now renders Kabu as a large, round, bright-red furry mascot with a prominent belly, two arms, two legs, waving/stepping motion, and an animated mouth while speech plays. The opening greeting is “ሰላም ካቡየ፣ ደሓን ዲኻ?” in Tigrinya. Chrome may block sound autoplay until the user interacts with the page; clicking Kabu plays the greeting.
+
+The microphone recording, server-side Tigrinya transcription, child-safe conversational response, and spoken Tigrinya reply flow are implemented. Addis Scribe documents Tigrinya STT (`language=ti`), and Addis Voices 2 documents seven Tigrinya voices. The live service must have the owner's `ADDIS_API_KEY` configured in Render for voice features. A production smoke-test workflow can verify the live greeting, transcription, chat response, and reply audio when explicitly triggered with a `[verify-kabu-voice]` commit message. Native-speaker review is still recommended for Tigrinya wording and pronunciation before production use.
 
 ## Project isolation
 This repository is dedicated only to KABU AI. It must not connect to or modify any Black Gold gaming project or infrastructure.
