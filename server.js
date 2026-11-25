@@ -22,7 +22,12 @@ app.disable("x-powered-by");
 app.use((req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("Referrer-Policy", "no-referrer");
-  res.setHeader("Cache-Control", req.path.startsWith("/api/") ? "no-store" : "public, max-age=300");
+  const cache = req.path.startsWith("/api/") || req.path === "/" || req.path.endsWith(".html")
+    ? "no-store, no-cache, must-revalidate"
+    : req.path.startsWith("/assets/")
+      ? "public, max-age=31536000, immutable"
+      : "no-cache";
+  res.setHeader("Cache-Control", cache);
   next();
 });
 app.use(express.json({ limit: "32kb" }));
