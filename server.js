@@ -93,6 +93,34 @@ app.post("/api/chat", rateLimit, async (req, res) => {
   }
 });
 
+
+app.post("/api/speech", rateLimit, async (req, res) => {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return res.status(503).json({ error: "ai_not_configured" });
+  const text = typeof req.body?.text === "string" ? req.body.text.trim() : "";
+  if (!text || text.length > 500) return res.status(400).json({ error: "invalid_text" });
+  try {
+    const upstream = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash-tts:generateContent", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: "Read this Tigrinya text aloud warmly and playfully as a friendly character speaking to a young child. Speak only the text, naturally and clearly: " + text }] }],
+        generationConfig: {
+          responseModalities: ["AUDIO"],
+          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Puck" } } }
+        }
+      })
+    });
+    const payload = await upstream.json().catch(() => ({}));
+    if (!upstream.ok) return res.status(upstream.status === 429 ? 429 : 502).json({ error: "speech_unavailable" });
+    const audioPart = payload.candidates?.[0]?.content?.parts?.find(part => part.inlineData?.data);
+    if (!audioPart) return res.status(502).json({ error: "empty_speech" });
+    return res.json({ audio: audioPart.inlineData.data, mimeType: audioPart.inlineData.mimeType || "audio/wav" });
+  } catch {
+    return res.status(502).json({ error: "speech_unavailable" });
+  }
+});
+
 app.use(express.static(path.join(root, "dist"), { index: "index.html" }));
 app.get("/{*splat}", (_req, res) => res.sendFile(path.join(root, "dist", "index.html")));
 app.listen(PORT, "0.0.0.0", () => console.log(`KABU AI listening on ${PORT}`));
