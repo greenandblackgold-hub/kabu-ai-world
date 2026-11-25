@@ -14,3 +14,9 @@
 @media(max-width:560px){.scene{padding:16px 12px 10px}.welcome{margin-top:12px}.play-area{height:360px}.kabu-character{--kabu-scale:.88}.sparkle-one{left:0}.sparkle-two{right:0}.interaction{gap:9px}}
 @media(max-height:760px){.welcome{margin-top:8px}.play-area{height:340px}.kabu-character{--kabu-scale:.82}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+.text-form{display:flex;width:min(100%,520px);gap:8px;margin-top:4px}
+.child-input{min-width:0;flex:1;border:2px solid #f2c8bd;border-radius:16px;padding:13px 15px;background:#fff;color:#542d35;font:inherit;font-size:16px;outline:none}
+.child-input:focus{border-color:#ef5962;box-shadow:0 0 0 3px #ef59621c}
+.send-button{border:0;border-radius:14px;padding:0 20px;background:#7d4b52;color:#fff;font-weight:800;cursor:pointer}
+@media(max-width:420px){.listen-button{padding:13px 24px}.text-form{gap:6px}.send-button{padding:0 14px}}
