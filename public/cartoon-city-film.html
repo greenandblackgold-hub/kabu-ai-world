@@ -35,16 +35,50 @@ function background(t){
  for(let x=65;x<950;x+=205){rounded(x,305,12,58,8,"#735c47");circle(x+6,292,27,"#47b96e");circle(x-9,306,17,"#55c879");}
 }
 function dog(x,y,scale,phase,coat,bandana){
- ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);const bob=Math.sin(phase*2)*4,run= Math.sin(phase*2.8);
- // tail
- ctx.save();ctx.translate(-37,-48+bob);ctx.rotate(Math.sin(phase*3)*.38);line(0,0,-22,-18,coat,10);ctx.restore();
- // legs
- for(let i=0;i<4;i++){let lx=-23+(i%2)*32,front=i>=2;ctx.save();ctx.translate(lx,-24+bob);ctx.rotate(Math.sin(phase*3+(i%2)*Math.PI+(front?Math.PI:0))*.55);rounded(-5,0,11,29,5,coat);circle(1,27,6,coat);ctx.restore()}
- // body/head/ears
- circle(-4,-45+bob,30,coat);circle(26,-72+bob,23,coat);
- ctx.save();ctx.translate(13,-88+bob);ctx.rotate(-.3+Math.sin(phase)*.08);ctx.fillStyle=coat;ctx.beginPath();ctx.ellipse(-8,-8,9,20,-.4,0,Math.PI*2);ctx.fill();ctx.restore();
- circle(35,-68+bob,3,"#202538");circle(44,-59+bob,4,"#27212a");circle(19,-79+bob,4,"#fff");
- rounded(-28,-56+bob,43,9,4,bandana);ctx.restore();
+ ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);
+ const bob=Math.sin(phase*2)*2.2, stride=Math.sin(phase*2.8);
+ const light=coat==="#d99b55"?"#efc080":"#fff5df";
+ const dark=coat==="#d99b55"?"#8b512e":"#c9bda7";
+ const fur=(x1,y1,x2,y2,color,width=2)=>line(x1,y1,x2,y2,color,width);
+ // Wagging tail with a tapered, softly rounded silhouette
+ ctx.save();ctx.translate(-38,-48+bob);ctx.rotate(Math.sin(phase*3)*.42);
+ ctx.strokeStyle=coat;ctx.lineWidth=12;ctx.lineCap="round";ctx.beginPath();ctx.moveTo(0,0);ctx.quadraticCurveTo(-13,-12,-25,-24);ctx.stroke();
+ ctx.strokeStyle=light;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(-5,-5);ctx.quadraticCurveTo(-15,-15,-23,-22);ctx.stroke();ctx.restore();
+ // Four articulated legs, alternating as the dog runs
+ for(let i=0;i<4;i++){
+  const front=i>=2,lx=front?25:-25;
+  ctx.save();ctx.translate(lx,-31+bob);ctx.rotate(stride*(i%2?1:-1)*.48+(front?-.08:.08));
+  const lg=ctx.createLinearGradient(-5,0,7,0);lg.addColorStop(0,dark);lg.addColorStop(.48,coat);lg.addColorStop(1,light);
+  ctx.fillStyle=lg;ctx.beginPath();ctx.moveTo(-6,0);ctx.quadraticCurveTo(-8,12,-5,25);ctx.quadraticCurveTo(-3,31,5,29);ctx.quadraticCurveTo(9,25,7,17);ctx.lineTo(7,3);ctx.closePath();ctx.fill();
+  ctx.fillStyle=light;ctx.beginPath();ctx.ellipse(2,29,9,5,-.08,0,Math.PI*2);ctx.fill();
+  for(let k=0;k<3;k++)line(-3+k*4,29,-2+k*4,32,dark,1);
+  ctx.restore();
+ }
+ // Main body with natural shading and shoulder/chest
+ const bodyGrad=ctx.createLinearGradient(0,-75,0,-15);bodyGrad.addColorStop(0,light);bodyGrad.addColorStop(.35,coat);bodyGrad.addColorStop(1,dark);
+ ctx.fillStyle=bodyGrad;ctx.beginPath();ctx.ellipse(-5,-47+bob,43,25,-.06,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle=light;ctx.beginPath();ctx.ellipse(24,-45+bob,17,21,-.2,0,Math.PI*2);ctx.fill();
+ // Neck and head
+ ctx.fillStyle=coat;ctx.beginPath();ctx.ellipse(28,-65+bob,20,25,.35,0,Math.PI*2);ctx.fill();
+ const headGrad=ctx.createLinearGradient(15,-105,55,-48);headGrad.addColorStop(0,light);headGrad.addColorStop(.5,coat);headGrad.addColorStop(1,dark);
+ ctx.fillStyle=headGrad;ctx.beginPath();ctx.ellipse(35,-78+bob,23,22,-.18,0,Math.PI*2);ctx.fill();
+ // Floppy ears
+ ctx.fillStyle=dark;ctx.beginPath();ctx.ellipse(20,-91+bob,9,19,-.48,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle=coat;ctx.beginPath();ctx.ellipse(21,-91+bob,5,14,-.48,0,Math.PI*2);ctx.fill();
+ // Muzzle, nose, mouth and expressive eyes
+ ctx.fillStyle=light;ctx.beginPath();ctx.ellipse(51,-65+bob,15,10,.12,0,Math.PI*2);ctx.fill();
+ circle(61,-67+bob,5,"#25232a");circle(60,-69+bob,1.5,"#fff");
+ circle(39,-83+bob,4.2,"#fff");circle(40,-83+bob,2.2,"#171923");circle(40.8,-84.2+bob,1,"#fff");
+ ctx.strokeStyle="#49352f";ctx.lineWidth=1.8;ctx.beginPath();ctx.moveTo(51,-58+bob);ctx.quadraticCurveTo(57,-53+bob,63,-58+bob);ctx.stroke();
+ // Fine fur marks across back, cheek and legs
+ for(let i=0;i<13;i++){const fx=-36+i*5.5,fy=-61+bob+Math.sin(i*.8)*3;fur(fx,fy,fx+4,fy-4, i%2?light:dark,1.3)}
+ for(let i=0;i<5;i++)fur(29+i*3,-72+bob+i*2,32+i*3,-68+bob+i*2,light,1.2);
+ // Collar and visible bandana
+ ctx.save();ctx.translate(20,-57+bob);ctx.rotate(-.12);
+ rounded(-16,-4,28,7,3,bandana);
+ ctx.fillStyle=bandana;ctx.beginPath();ctx.moveTo(-3,1);ctx.lineTo(8,13);ctx.lineTo(12,0);ctx.fill();
+ circle(7,-.5,2.2,"#f5d46c");ctx.restore();
+ ctx.restore();
 }
 function horse(x,y,scale,phase,spooked){
  ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);let bob=Math.sin(phase*2)*3,run=spooked?Math.sin(phase*3):Math.sin(phase*1.5)*.25;
