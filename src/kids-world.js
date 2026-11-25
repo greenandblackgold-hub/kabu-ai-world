@@ -22,25 +22,25 @@ export function mountKidsWorld() {
   world.setAttribute("aria-label", "Kabu 3D animated world");
   world.innerHTML = `
     <header class="kw-head">
-      <div><p class="kw-kicker">KABU 3D ADVENTURE WORLD</p><h2>🌈 ናብ 3D ዓለም ካቡ ብደሓን መጻእካ!</h2><p>ከተማ ጎብን፣ እንስሳት ርአን፣ ሓቢርና ንጻወት!</p></div>
+      <div><p class="kw-kicker">KABU 3D ADVENTURE WORLD</p><h2>🌍 ሕያው 3D ዓለም እንስሳት</h2><p>እንስሳት ይዛረቡ፣ ይራኸቡ፣ ብሓባር ይጉዓዙ!</p></div>
       <button class="kw-close" type="button" aria-label="ዕጸው">✕</button>
     </header>
     <nav class="kw-story-tabs" aria-label="ቦታ ምረጽ">
       <button type="button" data-scene="town" class="active">🏙️ ከተማ</button>
-      <button type="button" data-scene="forest">🌳 ጫካ</button>
+      <button type="button" data-scene="forest">🌳 ዱርን ሜዳን</button>
       <button type="button" data-scene="beach">🏖️ ባሕሪ</button>
     </nav>
     <div class="kw-stage" role="img" aria-label="ብሓቂ 3D ዝተሰርሐ ዓለም ካቡ">
       <div class="kw-loading"><span class="kw-loader"></span><b>3D ዓለም ይዳሎ ኣሎ…</b><small>ንቑሩብ ጽናሕ</small></div>
       <div class="kw-canvas"></div>
-      <div class="kw-stage-label">✨ KABU 3D WORLD</div>
+      <div class="kw-stage-label">✨ KABU LIVING 3D WORLD</div><div class="kw-animal-talk" aria-live="polite"><b id="kw-speaker">ቦቢ 🐶</b><span id="kw-dialogue">ሰላም ኣዕሩኽ! ከመይ ኣለኹም?</span></div>
       <div class="kw-stage-error" hidden>3D ዓለም ክኸፍት ኣይከኣለን። ኢንተርነትካ ኣረጋግጽ እሞ ደጊምካ ፈትን።</div>
     </div>
-    <div class="kw-story-caption" aria-live="polite"><span>✨</span><span id="kw-message">ቦቢ ውሻን ሮሚ ፈረስን ኣብ 3D ዓለም ክትራኸቦም ድሉው ዲኻ?</span></div>
+    <div class="kw-story-caption" aria-live="polite"><span>✨</span><span id="kw-message">ሸሞንተ ዓይነት እንስሳት ክራኸቡ፣ ክዛረቡን ብሓባር ክጉዓዙን እዮም!</span></div>
     <div class="kw-controls">
       <button type="button" data-action="play">⏸️ ዕረፍቲ</button>
       <button type="button" data-action="story">📖 ታሪኽ ጀምር</button>
-      <button type="button" data-action="dance">💃 ሳዕስዕ</button>
+      <button type="button" data-action="dance">🐾 ምንቅስቓስ ስብስብ</button>
       <button type="button" data-action="camera">🎥 ካሜራ ኣንቀሳቕስ</button>
       <button type="button" data-action="sound">🔊 ድምጺ</button>
     </div>
@@ -54,7 +54,9 @@ export function mountKidsWorld() {
   const loading = world.querySelector(".kw-loading");
   const errorBox = world.querySelector(".kw-stage-error");
   const status = world.querySelector("#kw-status");
-  let renderer, scene, camera, clock, animationId;
+  const speakerLabel=world.querySelector("#kw-speaker");
+  const dialogueLabel=world.querySelector("#kw-dialogue");
+  let renderer, scene, camera, clock, animationId, conversationTimer;
   let paused = false, dancing = false, cameraMoving = false, soundOn = true;
   let currentPlace = "town", storyTimer = null, audio = null, disposed = false;
   const movers = [], animalParts = [], cars = [];
@@ -189,6 +191,33 @@ export function mountKidsWorld() {
     return bird;
   }
 
+  function makeAnimal(parent, type, x, z, scale=1) {
+    const root=new THREE.Group(); root.position.set(x,0,z); root.scale.setScalar(scale); parent.add(root);
+    const palette={dog:["#bd7a45","#f2d1a6","#493027"],lion:["#d99a3e","#f5d18a","#8a4b24"],elephant:["#8796a5","#c4cdd3","#596a79"],zebra:["#f2f0e8","#ffffff","#252a31"],giraffe:["#e8b34e","#ffe0a0","#9a612e"],rabbit:["#e5d5c9","#fff1e8","#b77b7b"],deer:["#b87949","#f2d3aa","#63402d"],bear:["#74503d","#c89c73","#3d2922"]}[type];
+    const coat=material(palette[0]), light=material(palette[1]), dark=material(palette[2]), black=material("#211b1a"), white=material("#ffffff");
+    sphere(.62,.52,.94,coat,root,0,1.05,0);
+    const head=new THREE.Group(); head.position.set(0,1.95,.78); root.add(head);
+    sphere(.39,.36,.4,coat,head,0,0,0); sphere(.28,.19,.24,light,head,0,-.13,.32);
+    const jaw=sphere(.23,.07,.18,dark,head,0,-.29,.31);
+    for(const s of [-1,1]){sphere(.075,.09,.055,black,head,s*.17,.06,.34);sphere(.027,.03,.02,white,head,s*.19,.09,.38);}
+    const legs=[];
+    for(const sx of [-1,1]) for(const sz of [-1,1]){
+      const leg=new THREE.Group(); leg.position.set(sx*.37,.82,sz*.57); root.add(leg);
+      const length=type==="elephant"?.58:type==="giraffe"?.82:type==="rabbit"?.5:.68;
+      cylinder(type==="elephant"?.15:.105,type==="elephant"?.17:.12,length,coat,leg,0,-length/2,0,14);
+      sphere(.13,.1,.16,light,leg,0,-length+.03,.04); legs.push(leg);
+    }
+    const tail=sphere(type==="lion"?.09:.07,type==="lion"?.5:.34,.08,type==="lion"?dark:coat,root,0,1.2,-.95);
+    if(type==="lion"){sphere(.55,.52,.46,dark,root,0,1.95,.62);for(const s of [-1,1])sphere(.13,.14,.1,coat,head,s*.3,.29,-.02);}
+    if(type==="elephant"){const trunk=cylinder(.12,.17,.78,coat,head,0,-.4,.43,18);trunk.rotation.x=-.55;for(const s of [-1,1])sphere(.3,.38,.12,light,head,s*.42,0,-.02);}
+    if(type==="giraffe"){cylinder(.22,.3,1.2,coat,root,0,1.55,.56);for(let i=0;i<9;i++)sphere(.11,.13,.1,dark,root,Math.sin(i*7)*.43,.8+(i%4)*.25,Math.cos(i*7)*.66);for(const s of [-1,1])cylinder(.045,.05,.38,dark,head,s*.17,.47,0,10);}
+    if(type==="zebra"){for(let i=0;i<7;i++){const stripe=box(.055,.62,.035,dark,root,-.48+i*.16,1.08,.78);stripe.rotation.z=(i-3)*-.12;}for(const s of [-1,1])sphere(.09,.22,.07,coat,head,s*.24,.35,0);}
+    if(type==="rabbit")for(const s of [-1,1]){const ear=sphere(.12,.48,.09,coat,head,s*.19,.53,-.02);ear.rotation.z=s*-.18;sphere(.065,.34,.025,light,head,s*.19,.54,.065);}
+    if(type==="deer")for(const s of [-1,1]){const antler=cylinder(.035,.055,.55,light,head,s*.24,.52,-.02,8);antler.rotation.z=s*.25;}
+    root.userData={type,legs,head,jaw,tail,phase:Math.random()*6};
+    return root;
+  }
+
   function buildWorld() {
     scene=new THREE.Scene();
     scene.background=new THREE.Color("#8bdcff");
@@ -243,18 +272,11 @@ export function mountKidsWorld() {
     makeCar(world,"#ef476f",0,0);
     makeCar(world,"#3a86ff",-13,2.35,-1);
     makeCar(world,"#ffbe0b",13,-.05,1);
-    const dog=makeDog(world,-3,6.3);
-    const horse=makeHorse(world,2.2,6.0);
-    const giraffeGroup=new THREE.Group(); giraffeGroup.position.set(7,0,6); world.add(giraffeGroup);
-    const giraffe=material("#e9b64f"), spots=material("#a96c32");
-    sphere(.5,.68,.52,giraffe,giraffeGroup,0,.85,0);
-    cylinder(.2,.28,1.3,giraffe,giraffeGroup,0,1.65,.05);
-    sphere(.32,.28,.34,giraffe,giraffeGroup,0,2.38,.08);
-    for(let i=0;i<5;i++) sphere(.12,.13,.12,spots,giraffeGroup,Math.sin(i*2)*.36,.55+(i%3)*.32,Math.cos(i*2)*.36);
-    for(const s of [-1,1]){sphere(.1,.2,.1,giraffe,giraffeGroup,s*.2,2.7,.08); const leg=new THREE.Group();leg.position.set(s*.25,.5,0);giraffeGroup.add(leg);cylinder(.09,.12,.65,giraffe,leg,0,-.3,0);animalParts.push({part:leg,phase:s});}
-    const animals=new THREE.Group(); animals.add(dog,horse,giraffeGroup); world.add(animals);
-    for(let i=0;i<6;i++) makeBird(world,-10+i*4,5+(i%2),-2-i);
-    world.userData={town,forest,beach,animals,dog,horse,world};
+    const animals=new THREE.Group(); world.add(animals);
+    const herdTypes=["dog","lion","elephant","zebra","giraffe","rabbit","deer","bear"];
+    const herd=herdTypes.map((type,i)=>makeAnimal(animals,type,-7+(i%4)*4.5,5+Math.floor(i/4)*3.2,type==="rabbit"?.9:1));
+    for(let i=0;i<6;i++) makeBird(world,-10+i*4,5+(i%2),-2-i,"#f3a85d");
+    world.userData={town,forest,beach,animals,herd,world};
     resize();
     return world;
   }
@@ -288,8 +310,19 @@ export function mountKidsWorld() {
       for(const car of cars){car.position.x+=car.userData.direction*delta*(car.userData.direction>0?3.4:2.6);if(car.position.x>21)car.position.x=-21;if(car.position.x< -21)car.position.x=21;}
       for(const item of animalParts){if(item.tail){item.part.rotation.z=Math.sin(t*5)*.28;}else item.part.rotation.x=Math.sin(t*7+item.phase)*(dancing?.75:.3);}
       for(const item of movers){if(item.kind==="cloud")item.object.position.x+=Math.sin(t*.35+item.phase)*delta*.25;if(item.kind==="bird"){item.object.position.y+=Math.sin(t*4+item.phase)*delta*.45;item.object.rotation.z=Math.sin(t*2+item.phase)*.15;}}
-      worldGroup.userData.dog.position.y=Math.abs(Math.sin(t*2.2))*(dancing?.6:.08);
-      worldGroup.userData.horse.position.y=Math.abs(Math.sin(t*2.5+1))*(dancing?.75:.1);
+      worldGroup.userData.animals.position.x=Math.sin(t*.16)*2.1;
+      worldGroup.userData.animals.position.z=Math.cos(t*.13)*1.15;
+      worldGroup.userData.herd.forEach((animal,i)=>{
+        const phase=t*1.25+animal.userData.phase+i*.72;
+        animal.position.x=-7+(i%4)*4.5+Math.sin(t*.24+i*.45)*.9;
+        animal.position.z=5+Math.floor(i/4)*3.2+Math.cos(t*.28+i*.6)*.65;
+        animal.position.y=Math.abs(Math.sin(phase*2))*(dancing?.42:.055);
+        animal.rotation.y=Math.sin(t*.38+i*.7)*.18;
+        animal.userData.legs.forEach((leg,j)=>{leg.rotation.x=Math.sin(phase*5+(j%2)*Math.PI+(j>1?Math.PI:0))*(dancing?.65:.38);});
+        animal.userData.tail.rotation.x=-.6+Math.sin(t*4+i)*.2;
+        animal.userData.head.rotation.y=Math.sin(t*.8+i*1.7)*.22;
+        animal.userData.jaw.scale.y=.07+(Math.sin(t*7+i*2)>.65?.11:0);
+      });
       if(cameraMoving){camera.position.x=13+Math.sin(t*.25)*3;camera.position.z=17+Math.cos(t*.25)*2;camera.lookAt(0,1,0);}
       renderer.render(scene,camera);
     } else renderer.render(scene,camera);
@@ -305,6 +338,23 @@ export function mountKidsWorld() {
       loading.hidden=true;
       status.textContent="● LIVE 3D";
       animate();
+      const chats=[
+        ["ቦቢ 🐶","ሰላም ኣዕሩኽ! ሎሚ ኣበይ ንኺድ?"],
+        ["ሲምባ 🦁","ኣብ ሓምለዋይ ጫካ ክንጻወት እደሊ!"],
+        ["ኤሊ 🐘","ኣነ እውን ክመጽእ እየ። ብሓባር ንኺድ!"],
+        ["ዚብራ 🦓","ተጠንቀቑ! ኣብ መንገዲ ወፍታት ይዝምራ ኣለዋ!"],
+        ["ሚሚ 🐰","ዋው! ኣብ ሓባር ምጉዓዝ ኣዝዩ ደስ ይብል!"]
+      ];
+      let chatIndex=0;
+      conversationTimer=setInterval(()=>{
+        if(disposed||paused||!worldGroup)return;
+        const [speaker,line]=chats[chatIndex%chats.length];
+        speakerLabel.textContent=speaker;
+        dialogueLabel.textContent=line;
+        worldGroup.userData.herd[chatIndex%worldGroup.userData.herd.length].userData.head.rotation.y=.48;
+        say(line);
+        chatIndex++;
+      },6200);
       if("ResizeObserver" in window){new ResizeObserver(resize).observe(canvasHost);}else window.addEventListener("resize",resize);
     } catch(err) {
       console.error("Kabu 3D world failed to initialize",err);
@@ -341,6 +391,6 @@ export function mountKidsWorld() {
   }));
   initialize();
 
-  const cleanup=()=>{disposed=true;stopStory();cancelAnimationFrame(animationId);if(renderer)renderer.dispose();if(audio)audio.pause();if("speechSynthesis"in window)speechSynthesis.cancel();};
+  const cleanup=()=>{disposed=true;clearInterval(conversationTimer);stopStory();cancelAnimationFrame(animationId);if(renderer)renderer.dispose();if(audio)audio.pause();if("speechSynthesis"in window)speechSynthesis.cancel();};
   window.addEventListener("pagehide",cleanup,{once:true});
 }

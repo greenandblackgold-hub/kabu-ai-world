@@ -14,3 +14,9 @@
 @keyframes kw-spin{to{transform:rotate(360deg)}}
 @media(max-width:560px){#kids-world-launch{padding:8px 11px;font-size:11px}.kw-stage{height:380px;min-height:380px}.kw-controls button{font-size:11px;padding:10px 12px}.kw-story-tabs button{padding:8px 13px;font-size:12px}.kw-head h2{font-size:19px}}
 @media(prefers-reduced-motion:reduce){.kids-world *{animation:none!important;transition:none!important}}
+
+.kw-animal-talk{position:absolute;z-index:3;right:16px;bottom:16px;display:flex;flex-direction:column;gap:5px;max-width:min(340px,76%);padding:12px 15px;border:2px solid #fff;border-radius:18px 18px 5px 18px;background:#fffefaed;box-shadow:0 8px 24px #25394b35;color:#53627b;pointer-events:none;animation:kw-talk-pop .45s ease-out}
+.kw-animal-talk:after{content:"";position:absolute;right:24px;bottom:-10px;width:17px;height:17px;background:#fffefaed;border-right:2px solid white;border-bottom:2px solid white;transform:rotate(45deg)}
+.kw-animal-talk b{font-size:12px;color:#e18b46}.kw-animal-talk span{font-size:13px;line-height:1.5;font-weight:800}
+.kw-story-caption{background:linear-gradient(110deg,#fff,#fff7e8)}
+@keyframes kw-talk-pop{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
