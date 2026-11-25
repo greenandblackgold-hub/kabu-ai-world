@@ -10,7 +10,7 @@
 <body><main class="wrap"><h1>🐶🐶 የከተማዋ ጀብዱ 🐴🚁</h1>
 <div class="stage"><canvas id="film" width="960" height="540" aria-label="የካርቱን ፊልም"></canvas></div>
 <div class="hud"><button id="play">▶ Play</button><button id="replay" class="secondary">↻ Replay</button><span id="status" class="status">ለመጀመር Play ይጫኑ</span></div>
-<p class="hint">ድምጽ ለመስማት በመጀመሪያ Play ይጫኑ። ፊልሙ 22 ሰከንድ ነው።</p></main>
+<p class="hint">ድምጽ ለመስማት በመጀመሪያ Play ይጫኑ። ፊልሙ 22 ሰከንድ ነው። የድምጽ መጠኑንም ያረጋግጡ።</p></main>
 <script>
 (()=>{"use strict";
 const canvas=document.getElementById("film"),ctx=canvas.getContext("2d"),playBtn=document.getElementById("play"),replayBtn=document.getElementById("replay"),statusEl=document.getElementById("status");
@@ -129,18 +129,20 @@ function draw(t){
  if(t>=D){rounded(280,210,400,105,22,"#172541e8");text("መጨረሻ! በጣም ጥሩ ጀብዱ!",480,255,23);text("↻ Replay ይጫኑ",480,290,18,"#ffe16b")}
 }
 function initAudio(){if(!audio){const AC=window.AudioContext||window.webkitAudioContext;if(AC)audio=new AC()}if(audio&&audio.state==="suspended")audio.resume()}
-function tone(freq,dur=.16,type="sine",vol=.08,slide=0){if(!audio)return;const o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.setValueAtTime(freq,audio.currentTime);if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(30,freq+slide),audio.currentTime+dur);g.gain.setValueAtTime(vol,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+dur);o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+dur)}
-function noise(dur=.18,vol=.05,filter=900){if(!audio)return;const n=Math.floor(audio.sampleRate*dur),b=audio.createBuffer(1,n,audio.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;const s=audio.createBufferSource(),f=audio.createBiquadFilter(),g=audio.createGain();s.buffer=b;f.type="lowpass";f.frequency.value=filter;g.gain.setValueAtTime(vol,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+dur);s.connect(f);f.connect(g);g.connect(audio.destination);s.start()}
-function bark(){tone(180,.13,"sawtooth",.12,-100);tone(120,.12,"triangle",.07,-50)}
+function tone(freq,dur=.16,type="sine",vol=.08,slide=0){if(!audio)return;const o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.setValueAtTime(freq,audio.currentTime);if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(30,freq+slide),audio.currentTime+dur);g.gain.setValueAtTime(Math.min(.88,vol*3.8),audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+dur);o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+dur)}
+function noise(dur=.18,vol=.05,filter=900){if(!audio)return;const n=Math.floor(audio.sampleRate*dur),b=audio.createBuffer(1,n,audio.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;const s=audio.createBufferSource(),f=audio.createBiquadFilter(),g=audio.createGain();s.buffer=b;f.type="lowpass";f.frequency.value=filter;g.gain.setValueAtTime(Math.min(.82,vol*4.2),audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+dur);s.connect(f);f.connect(g);g.connect(audio.destination);s.start()}
+function bark(){tone(260,.20,"sawtooth",.24,-175);tone(155,.18,"triangle",.20,-85);noise(.12,.20,1200)}
+function neigh(){tone(520,.22,"sawtooth",.18,260);tone(780,.34,"triangle",.16,-420);noise(.24,.14,1800)}
+function rotor(){tone(95,.24,"sawtooth",.16,45);noise(.22,.15,620)}
 function speak(words){if(!("speechSynthesis"in window))return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(words);u.lang="am-ET";u.rate=1.08;u.pitch=1.25;u.volume=.9;speechSynthesis.speak(u)}catch{}}
 function cue(t){const sec=Math.floor(t);if(sec===lastCue)return;lastCue=sec;
  if(sec===0){tone(660,.12);tone(880,.16,"sine",.06,120);speak("እንሂድ! እዚያ ጋር ተመልከት!")}
  if(sec===3){tone(740,.12);speak("ውይ! ምንድነው?")}
  if(sec===5){tone(480,.3,"triangle",.07,-60);speak("ሰላም ፈረስ!")}
- if(sec===8){tone(950,.12,"sawtooth",.1,-500);speak("አይ! ፈረሱ ደነገጠ!")}
- if(sec===10||sec===12||sec===14){bark();setTimeout(bark,180);if(sec===10)speak("ውፍ! ውፍ!")}
- if(sec===16){noise(.5,.09,500);tone(130,.55,"sawtooth",.08,60);speak("ሄሊኮፕተር መጣ!")}
- if(sec===18||sec===20){tone(125,.35,"sawtooth",.06,30);noise(.22,.04,700)}
+ if(sec===8){tone(950,.12,"sawtooth",.18,-500);neigh();speak("አይ! ፈረሱ ደነገጠ!")}
+ if(sec===10||sec===11||sec===12||sec===13||sec===14||sec===15){bark();setTimeout(bark,230);if(sec===10)speak("ውፍ! ውፍ!")}
+ if(sec===16){noise(.5,.20,500);tone(130,.55,"sawtooth",.18,60);rotor();speak("ሄሊኮፕተር መጣ!")}
+ if(sec===17||sec===18||sec===19||sec===20||sec===21){rotor()}
 }
 function frame(now){if(!playing)return;const t=Math.min(D,(now-start)/1000);elapsed=t;draw(t);cue(t);statusEl.textContent=t.toFixed(1)+" / 22 ሰከንድ";if(t>=D){playing=false;ended=true;playBtn.textContent="▶ Play";statusEl.textContent="ፊልሙ ተጠናቋል";if("speechSynthesis"in window)speechSynthesis.cancel();return}raf=requestAnimationFrame(frame)}
 function begin(){cancelAnimationFrame(raf);if("speechSynthesis"in window)speechSynthesis.cancel();initAudio();start=performance.now();elapsed=0;lastCue=-1;playing=true;ended=false;playBtn.textContent="Ⅱ Pause";statusEl.textContent="ፊልሙ በመጫወት ላይ…";raf=requestAnimationFrame(frame)}
