@@ -9,7 +9,7 @@ KABU AI is a Tigrinya-first voice companion that runs in Google Chrome.
 4. The browser plays the reply and keeps a short conversation history in memory for follow-up turns.
 
 ## Required configuration
-Set `ADDIS_API_KEY` as a secret environment variable on the server. Never put it in browser code or GitHub. The API key is not included in this repository.
+Set `ADDIS_API_KEY` as a secret environment variable on the Render service. Never put it in browser code or GitHub. The API key is not included in this repository. Without this key, the website shell loads but voice turns return a clear setup message.
 
 ## Run locally
 - Node.js 22+
@@ -32,7 +32,7 @@ Set `ADDIS_API_KEY` as a secret environment variable on the server. Never put it
 - This application is not a substitute for adult supervision.
 
 ## Status
-The Chrome voice-chat flow is implemented against the documented Addis AI Tigrinya STT, chat, and TTS endpoints. End-to-end speech accuracy, child voice recognition, and the actual account API key still require a live test before declaring production readiness.
+The Chrome microphone recording, server-side Tigrinya transcription, conversational response, and Tigrinya speech playback flow are implemented. Addis Scribe documents Tigrinya STT (`language=ti`), and Addis Voices 2 documents seven Tigrinya voices. The live service still needs the owner's Addis AI API key in Render and end-to-end testing with real child speech. Text-generation output quality in Tigrinya must also be checked with native speakers before production use.
 
 ## Project isolation
 This repository is dedicated only to KABU AI. It must not connect to or modify any Black Gold gaming project or infrastructure.
