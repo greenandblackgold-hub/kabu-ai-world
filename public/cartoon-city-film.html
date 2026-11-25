@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="am">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>የከተማዋ ጀብዱ — ካርቱን ፊልም</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:radial-gradient(ellipse at top,#253b68,#10172d 70%);font-family:system-ui,"Noto Sans Ethiopic",sans-serif;color:#fff;padding:18px}.wrap{width:min(100%,1100px)}h1{text-align:center;font-size:clamp(20px,3vw,30px);margin:0 0 12px}.stage{position:relative;overflow:hidden;border:4px solid #ffffff30;border-radius:22px;box-shadow:0 24px 80px #0008;background:#80d8ff;aspect-ratio:16/9}canvas{display:block;width:100%;height:100%}.hud{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;margin-top:14px}.hud button{border:0;border-radius:999px;padding:12px 24px;font-weight:800;font-size:16px;cursor:pointer;color:#18223d;background:#ffe16b;box-shadow:0 5px 0 #c28b26;transition:transform .12s}.hud button:active{transform:translateY(3px);box-shadow:0 2px 0 #c28b26}.hud button.secondary{background:#d7e7ff;box-shadow:0 5px 0 #7897c9}.status{min-width:150px;text-align:center;color:#d9e7ff;font-size:14px}.hint{text-align:center;color:#b8c9e8;font-size:13px;margin-top:10px}
+</style>
+</head>
+<body><main class="wrap"><h1>🐶🐶 የከተማዋ ጀብዱ 🐴🚁</h1>
+<div class="stage"><canvas id="film" width="960" height="540" aria-label="የካርቱን ፊልም"></canvas></div>
+<div class="hud"><button id="play">▶ Play</button><button id="replay" class="secondary">↻ Replay</button><span id="status" class="status">ለመጀመር Play ይጫኑ</span></div>
+<p class="hint">ድምጽ ለመስማት በመጀመሪያ Play ይጫኑ። ፊልሙ 22 ሰከንድ ነው።</p></main>
+<script>
+(()=>{"use strict";
+const canvas=document.getElementById("film"),ctx=canvas.getContext("2d"),playBtn=document.getElementById("play"),replayBtn=document.getElementById("replay"),statusEl=document.getElementById("status");
+const W=960,H=540,D=22;let start=0,raf=0,playing=false,ended=false,audio=null,lastCue=-1;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),lerp=(a,b,t)=>a+(b-a)*t,ease=t=>{t=clamp(t,0,1);return t*t*(3-2*t)};
+function rounded(x,y,w,h,r,color){ctx.fillStyle=color;ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill()}
+function circle(x,y,r,color){ctx.fillStyle=color;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill()}
+function line(x1,y1,x2,y2,color,width=3){ctx.strokeStyle=color;ctx.lineWidth=width;ctx.lineCap="round";ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke()}
+function text(s,x,y,size=22,color="#fff"){ctx.font="bold "+size+"px system-ui, sans-serif";ctx.textAlign="center";ctx.lineWidth=4;ctx.strokeStyle="#26334c";ctx.strokeText(s,x,y);ctx.fillStyle=color;ctx.fillText(s,x,y)}
+function bubble(s,x,y){ctx.font="bold 19px system-ui,sans-serif";const w=ctx.measureText(s).width+30;rounded(x-w/2,y-35,w,42,14,"#fff");ctx.fillStyle="#fff";ctx.beginPath();ctx.moveTo(x-7,y+7);ctx.lineTo(x+6,y+7);ctx.lineTo(x,y+18);ctx.fill();ctx.fillStyle="#27324a";ctx.textAlign="center";ctx.fillText(s,x,y-8)}
+function background(t){
+ const sky=ctx.createLinearGradient(0,0,0,390);sky.addColorStop(0,"#55bdf5");sky.addColorStop(1,"#d8f7ff");ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
+ circle(820,78,42,"#ffe879");for(let i=0;i<5;i++){let x=((i*235+90-t*7)%1120+1120)%1120-80,y=70+(i%3)*42;circle(x,y,22,"#fff");circle(x+24,y-10,29,"#fff");circle(x+53,y,22,"#fff")}
+ // distant hills
+ ctx.fillStyle="#8ddc9b";ctx.beginPath();ctx.moveTo(0,330);ctx.quadraticCurveTo(180,235,360,330);ctx.quadraticCurveTo(600,225,790,330);ctx.quadraticCurveTo(890,270,960,315);ctx.lineTo(960,410);ctx.lineTo(0,410);ctx.fill();
+ // city blocks
+ const buildings=[[-20,205,130,185,"#ff9c77"],[115,160,145,230,"#f5c86c"],[265,210,120,180,"#a58be8"],[390,145,150,245,"#7fc9df"],[550,195,130,195,"#ffadbd"],[690,155,145,235,"#8acda4"],[845,205,145,185,"#f4b66f"]];
+ for(const [x,y,w,h,c] of buildings){rounded(x,y,w,h,8,c);rounded(x+12,y+13,w-24,15,5,"#ffffff80");for(let yy=y+43;yy<y+h-22;yy+=43)for(let xx=x+15;xx<x+w-15;xx+=35)rounded(xx,yy,19,23,4,"#fff1b4")}
+ // street
+ ctx.fillStyle="#596579";ctx.fillRect(0,365,W,175);ctx.fillStyle="#424d60";ctx.fillRect(0,365,W,9);ctx.fillStyle="#f9e8a1";for(let x=-20;x<W;x+=150)rounded(x,444,82,8,4,"#f9e8a1");
+ ctx.fillStyle="#7bc77b";ctx.fillRect(0,355,W,15);
+ for(let x=65;x<950;x+=205){rounded(x,305,12,58,8,"#735c47");circle(x+6,292,27,"#47b96e");circle(x-9,306,17,"#55c879");}
+}
+function dog(x,y,scale,phase,coat,bandana){
+ ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);const bob=Math.sin(phase*2)*4,run= Math.sin(phase*2.8);
+ // tail
+ ctx.save();ctx.translate(-37,-48+bob);ctx.rotate(Math.sin(phase*3)*.38);line(0,0,-22,-18,coat,10);ctx.restore();
+ // legs
+ for(let i=0;i<4;i++){let lx=-23+(i%2)*32,front=i>=2;ctx.save();ctx.translate(lx,-24+bob);ctx.rotate(Math.sin(phase*3+(i%2)*Math.PI+(front?Math.PI:0))*.55);rounded(-5,0,11,29,5,coat);circle(1,27,6,coat);ctx.restore()}
+ // body/head/ears
+ circle(-4,-45+bob,30,coat);circle(26,-72+bob,23,coat);
+ ctx.save();ctx.translate(13,-88+bob);ctx.rotate(-.3+Math.sin(phase)*.08);ctx.fillStyle=coat;ctx.beginPath();ctx.ellipse(-8,-8,9,20,-.4,0,Math.PI*2);ctx.fill();ctx.restore();
+ circle(35,-68+bob,3,"#202538");circle(44,-59+bob,4,"#27212a");circle(19,-79+bob,4,"#fff");
+ rounded(-28,-56+bob,43,9,4,bandana);ctx.restore();
+}
+function horse(x,y,scale,phase,spooked){
+ ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);let bob=Math.sin(phase*2)*3,run=spooked?Math.sin(phase*3):Math.sin(phase*1.5)*.25;
+ // tail
+ ctx.save();ctx.translate(-50,-86+bob);ctx.rotate(Math.sin(phase*4)*.35);line(0,0,-20,25,"#4c2d24",9);ctx.restore();
+ // legs
+ for(let i=0;i<4;i++){let lx=-32+(i%2)*51;ctx.save();ctx.translate(lx,-36+bob);ctx.rotate(run*(i%2?1:-1)*.7);rounded(-6,0,13,51,6,"#8a4d35");circle(0,49,7,"#332b2b");ctx.restore()}
+ // body neck head
+ ctx.save();ctx.translate(0,bob);ctx.fillStyle="#a96343";ctx.beginPath();ctx.ellipse(-2,-67,56,31,0,0,Math.PI*2);ctx.fill();
+ ctx.save();ctx.translate(36,-90);ctx.rotate(spooked?-.38:-.12);ctx.fillStyle="#a96343";ctx.beginPath();ctx.moveTo(-8,8);ctx.quadraticCurveTo(1,-45,25,-61);ctx.lineTo(43,-55);ctx.lineTo(20,10);ctx.fill();circle(34,-57,20,"#b87450");ctx.fillStyle="#4b2b25";ctx.beginPath();ctx.moveTo(20,-72);ctx.lineTo(18,-95);ctx.lineTo(30,-78);ctx.fill();ctx.beginPath();ctx.moveTo(39,-72);ctx.lineTo(50,-91);ctx.lineTo(51,-69);ctx.fill();circle(43,-61,3,"#171b26");circle(52,-51,4,"#34252a");ctx.restore();
+ // mane
+ for(let i=0;i<5;i++)circle(25-i*5,-112+i*7,"#4a2a25".length?5:5,"#4a2a25");
+ ctx.restore();ctx.restore();
+}
+function person(x,y,phase){ctx.save();ctx.translate(x,y);circle(0,-53,12,"#b8754d");rounded(-12,-39,24,39,7,"#3b78c5");line(-8,-2,-12,23,"#29334b",7);line(8,-2,13,23,"#29334b",7);line(-9,-29,-25,-14,"#b8754d",6);line(9,-29,23,-17,"#b8754d",6);ctx.restore()}
+function helicopter(x,y,scale,phase){ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);ctx.rotate(Math.sin(phase*2)*.025);
+ // rotor
+ line(-70,-42,70,-42,"#303d54",5);line(0,-48,0,-58,"#303d54",5);
+ // tail
+ ctx.fillStyle="#53657f";ctx.beginPath();ctx.moveTo(-45,-12);ctx.lineTo(-100,-27);ctx.lineTo(-106,-18);ctx.lineTo(-49,3);ctx.fill();circle(-104,-23,7,"#ffd95c");
+ // body
+ ctx.fillStyle="#4cbb9b";ctx.beginPath();ctx.ellipse(0,0,57,28,0,0,Math.PI*2);ctx.fill();rounded(-30,-22,47,27,12,"#a9edff");line(43,-4,63,8,"#34445e",7);line(63,8,63,23,"#34445e",5);line(-30,28,28,28,"#34445e",5);
+ circle(-12,5,5,"#ffe66d");circle(12,5,5,"#ff6e70");ctx.restore()}
+function draw(t){
+ background(t);
+ // tiny pedestrians in city
+ for(let i=0;i<5;i++)person(120+i*170,363, t+i);
+ let dogX1,dogX2,hx,hy,phase=t*5,spooked=t>=8.2;
+ if(t<5){dogX1=300+Math.sin(t*2)*40;dogX2=440+Math.sin(t*2+1)*35;hx=1120;hy=360}
+ else if(t<10){dogX1=250;dogX2=380;hx=lerp(1080,580,ease((t-5)/5));hy=365}
+ else {let k=t-10;dogX1=230+k*42;dogX2=340+k*42;hx=470+k*55;hy=360+Math.sin(k*2)*3}
+ // scene action
+ if(t>=5&&t<10){person(545+Math.sin(t*2)*10,365,t);person(615+Math.sin(t*2+1)*10,365,t);if(t>7.4)bubble("ሰላም ፈረስ!",580,220)}
+ if(t>=10){dogX1=clamp(dogX1,180,820);dogX2=clamp(dogX2,290,900);hx=clamp(hx,450,910)}
+ horse(hx,hy,1.08,phase,spooked);
+ dog(dogX1,367,.95,phase,"#d99b55","#e96b68");
+ dog(dogX2,367,.86,phase+1.4,"#f1e4c9","#5b9fe6");
+ // bubbles
+ if(t<2.6){bubble("እንሂድ!",dogX1,245);bubble("እዚያ ጋር ተመልከት!",dogX2,205)}
+ else if(t<5){bubble("ውይ! ምንድነው?",dogX2,210)}
+ if(t>=10&&t<16){bubble("ውፍ! ውፍ!",dogX1,220);bubble("ተጠንቀቅ!",dogX2,180)}
+ if(t>=16){let hyc=lerp(-100,125,ease((t-16)/3));let hxC=lerp(800,640,ease((t-16)/3));helicopter(hxC,hyc,.92,phase);if(t>18)text("🚨",hxC+90,hyc+35,24)}
+ // foreground bushes
+ for(let x=0;x<W;x+=80){circle(x,535,27,"#4eaf6c");circle(x+22,540,23,"#62c77a")}
+ // title strip / time bar
+ rounded(20,18,245,38,14,"#182945aa");text("የከተማዋ ጀብዱ",142,44,19);
+ rounded(20,510,920,9,5,"#ffffff70");rounded(20,510,920*(t/D),9,5,"#ffe16b");
+ if(t>=D){rounded(280,210,400,105,22,"#172541e8");text("መጨረሻ! በጣም ጥሩ ጀብዱ!",480,255,23);text("↻ Replay ይጫኑ",480,290,18,"#ffe16b")}
+}
+function initAudio(){if(!audio){const AC=window.AudioContext||window.webkitAudioContext;if(AC)audio=new AC()}if(audio&&audio.state==="suspended")audio.resume()}
+function tone(freq,dur=.16,type="sine",vol=.08,slide=0){if(!audio)return;const o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.setValueAtTime(freq,audio.currentTime);if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(30,freq+slide),audio.currentTime+dur);g.gain.setValueAtTime(vol,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+dur);o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+dur)}
+function noise(dur=.18,vol=.05,filter=900){if(!audio)return;const n=Math.floor(audio.sampleRate*dur),b=audio.createBuffer(1,n,audio.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;const s=audio.createBufferSource(),f=audio.createBiquadFilter(),g=audio.createGain();s.buffer=b;f.type="lowpass";f.frequency.value=filter;g.gain.setValueAtTime(vol,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+dur);s.connect(f);f.connect(g);g.connect(audio.destination);s.start()}
+function bark(){tone(180,.13,"sawtooth",.12,-100);tone(120,.12,"triangle",.07,-50)}
+function speak(words){if(!("speechSynthesis"in window))return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(words);u.lang="am-ET";u.rate=1.08;u.pitch=1.25;u.volume=.9;speechSynthesis.speak(u)}catch{}}
+function cue(t){const sec=Math.floor(t);if(sec===lastCue)return;lastCue=sec;
+ if(sec===0){tone(660,.12);tone(880,.16,"sine",.06,120);speak("እንሂድ! እዚያ ጋር ተመልከት!")}
+ if(sec===3){tone(740,.12);speak("ውይ! ምንድነው?")}
+ if(sec===5){tone(480,.3,"triangle",.07,-60);speak("ሰላም ፈረስ!")}
+ if(sec===8){tone(950,.12,"sawtooth",.1,-500);speak("አይ! ፈረሱ ደነገጠ!")}
+ if(sec===10||sec===12||sec===14){bark();setTimeout(bark,180);if(sec===10)speak("ውፍ! ውፍ!")}
+ if(sec===16){noise(.5,.09,500);tone(130,.55,"sawtooth",.08,60);speak("ሄሊኮፕተር መጣ!")}
+ if(sec===18||sec===20){tone(125,.35,"sawtooth",.06,30);noise(.22,.04,700)}
+}
+function frame(now){if(!playing)return;const t=Math.min(D,(now-start)/1000);draw(t);cue(t);statusEl.textContent=t.toFixed(1)+" / 22 ሰከንድ";if(t>=D){playing=false;ended=true;playBtn.textContent="▶ Play";statusEl.textContent="ፊልሙ ተጠናቋል";if("speechSynthesis"in window)speechSynthesis.cancel();return}raf=requestAnimationFrame(frame)}
+function begin(){cancelAnimationFrame(raf);if("speechSynthesis"in window)speechSynthesis.cancel();initAudio();start=performance.now();lastCue=-1;playing=true;ended=false;playBtn.textContent="Ⅱ Pause";statusEl.textContent="ፊልሙ በመጫወት ላይ…";raf=requestAnimationFrame(frame)}
+playBtn.addEventListener("click",()=>{if(playing){playing=false;cancelAnimationFrame(raf);if("speechSynthesis"in window)speechSynthesis.pause();playBtn.textContent="▶ Continue";statusEl.textContent="ቆሟል"}else if(start&& !ended){initAudio();start=performance.now()-(Number(statusEl.textContent.split(" ")[0])||0)*1000;if("speechSynthesis"in window)speechSynthesis.resume();playing=true;raf=requestAnimationFrame(frame)}else begin()});
+replayBtn.addEventListener("click",begin);
+draw(0);
+})();
+</script></body></html>
